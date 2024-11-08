@@ -1,0 +1,116 @@
+{
+    "app": {
+        "title": "Discord Server Cloner",
+        "subtitle": "Clona fácilmente tu servidor de Discord"
+    },
+    "settings": {
+        "title": "Ajustes",
+        "appearance": {
+            "title": "Apariencia",
+            "themes": {
+                "dark": "Oscuro",
+                "light": "Claro",
+                "system": "Sistema"
+            }
+        },
+        "language": {
+            "title": "Idioma",
+            "languages": {
+                "it-IT": "Italiano",
+                "en-US": "English",
+                "es-ES": "Español"
+            }
+        },
+        "debug": {
+            "title": "Depuración",
+            "description": "El modo debug muestra:\n• Registros detallados\n• Tiempos de ejecución\n• Errores específicos\n• Estadísticas de clonación",
+            "enable": "Modo Debug",
+            "save_logs": "Guardar registros",
+            "show_timing": "Mostrar tiempos",
+            "show_api": "Mostrar detalles API"
+        },
+        "info": {
+            "title": "Información",
+            "version": "Versión: {version}"
+        }
+    },
+    "input": {
+        "token": {
+            "title": "Token de Discord",
+            "placeholder": "Ingresa tu token de Discord",
+            "help": "¿Cómo obtener el token?",
+            "help_text": "Cómo obtener tu token de Discord:\n\n1. Abre Discord en el navegador\n2. Presiona F12 para abrir herramientas de desarrollo\n3. Ve a la sección Network\n4. Busca una petición que comience con 'science'\n5. En Headers busca 'authorization'\n\n⚠️ Advertencia: ¡Nunca compartas tu token con nadie!"
+        },
+        "guild": {
+            "source": {
+                "title": "Servidor Origen",
+                "placeholder": "ID del servidor a copiar"
+            },
+            "destination": {
+                "title": "Servidor Destino",
+                "placeholder": "ID del servidor donde copiar"
+            },
+            "clone_button": "Iniciar Clonación"
+        }
+    },
+    "status": {
+        "ready": "Listo",
+        "cloning": "Clonación en progreso...",
+        "success": "¡Clonación completada!",
+        "error": "Error durante la clonación",
+        "connecting": "Conectando..."
+    },
+    "debug_window": {
+        "title": "Consola de Debug",
+        "buttons": {
+            "clear": "Limpiar Log",
+            "save": "Guardar Log"
+        },
+        "stats": {
+            "start_time": "Inicio",
+            "elapsed_time": "Tiempo transcurrido",
+            "roles": "Roles",
+            "channels": "Canales",
+            "errors": "Errores"
+        }
+    },
+    "logs": {
+        "server": {
+            "start": "Iniciando modificación del servidor...",
+            "icon_updated": "Icono del servidor actualizado",
+            "error": "Error al modificar servidor: {error}"
+        },
+        "roles": {
+            "start_delete": "Eliminando roles existentes...",
+            "deleted": "Rol eliminado: {role}",
+            "delete_error": "Error al eliminar rol {role}: {error}",
+            "start_create": "Creando nuevos roles...",
+            "created": "Rol creado ({current}/{total}): {role}",
+            "create_error": "Error al crear rol {role}: {error}"
+        },
+        "channels": {
+            "start_delete": "Eliminando canales existentes...",
+            "deleted": "Canal eliminado: {channel}",
+            "delete_error": "Error al eliminar canal {channel}: {error}",
+            "start_create": "Creando canales...",
+            "category_created": "Categoría creada: {category}",
+            "category_error": "Error al crear categoría {category}: {error}",
+            "text_created": "Canal de texto creado ({current}/{total}): {channel}",
+            "text_error": "Error al crear canal de texto {channel}: {error}",
+            "voice_created": "Canal de voz creado ({current}/{total}): {channel}",
+            "voice_error": "Error al crear canal de voz {channel}: {error}"
+        },
+        "clone": {
+            "connected": "Conectado como: {user}",
+            "initializing": "Inicializando clonación...",
+            "server_not_found": "Servidores no encontrados",
+            "completed": "Clonación completada en {time:.2f} segundos",
+            "error": "Error durante la clonación: {error}",
+            "connection_error": "Error de conexión: {error}"
+        },
+        "debug": {
+            "file_enabled": "Registro en archivo activado",
+            "file_disabled": "Registro en archivo desactivado"
+        }
+    }
+} 

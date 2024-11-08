@@ -1,0 +1,116 @@
+{
+    "app": {
+        "title": "Discord Server Cloner",
+        "subtitle": "Easily clone your Discord server"
+    },
+    "settings": {
+        "title": "Settings",
+        "appearance": {
+            "title": "Appearance",
+            "themes": {
+                "dark": "Dark",
+                "light": "Light",
+                "system": "System"
+            }
+        },
+        "language": {
+            "title": "Language",
+            "languages": {
+                "it-IT": "Italiano",
+                "en-US": "English",
+                "es-ES": "Español"
+            }
+        },
+        "debug": {
+            "title": "Debug",
+            "description": "Debug mode shows:\n• Detailed logs\n• Execution times\n• Specific errors\n• Cloning statistics",
+            "enable": "Debug Mode",
+            "save_logs": "Save logs to file",
+            "show_timing": "Show execution times",
+            "show_api": "Show API details"
+        },
+        "info": {
+            "title": "Information",
+            "version": "Version: {version}"
+        }
+    },
+    "input": {
+        "token": {
+            "title": "Discord Token",
+            "placeholder": "Enter your Discord token",
+            "help": "How to get the token?",
+            "help_text": "How to get your Discord token:\n\n1. Open Discord in browser\n2. Press F12 to open developer tools\n3. Go to Network section\n4. Look for a request starting with 'science'\n5. In Headers look for 'authorization'\n\n⚠️ Warning: Never share your token with anyone!"
+        },
+        "guild": {
+            "source": {
+                "title": "Source Server",
+                "placeholder": "ID of server to copy"
+            },
+            "destination": {
+                "title": "Destination Server",
+                "placeholder": "ID of server to copy to"
+            },
+            "clone_button": "Start Cloning"
+        }
+    },
+    "status": {
+        "ready": "Ready",
+        "cloning": "Cloning in progress...",
+        "success": "Cloning completed!",
+        "error": "Error during cloning",
+        "connecting": "Connecting..."
+    },
+    "debug_window": {
+        "title": "Debug Console",
+        "buttons": {
+            "clear": "Clear Log",
+            "save": "Save Log"
+        },
+        "stats": {
+            "start_time": "Start",
+            "elapsed_time": "Elapsed time",
+            "roles": "Roles",
+            "channels": "Channels",
+            "errors": "Errors"
+        }
+    },
+    "logs": {
+        "server": {
+            "start": "Starting server modification...",
+            "icon_updated": "Server icon updated",
+            "error": "Error modifying server: {error}"
+        },
+        "roles": {
+            "start_delete": "Deleting existing roles...",
+            "deleted": "Role deleted: {role}",
+            "delete_error": "Error deleting role {role}: {error}",
+            "start_create": "Creating new roles...",
+            "created": "Role created ({current}/{total}): {role}",
+            "create_error": "Error creating role {role}: {error}"
+        },
+        "channels": {
+            "start_delete": "Deleting existing channels...",
+            "deleted": "Channel deleted: {channel}",
+            "delete_error": "Error deleting channel {channel}: {error}",
+            "start_create": "Creating channels...",
+            "category_created": "Category created: {category}",
+            "category_error": "Error creating category {category}: {error}",
+            "text_created": "Text channel created ({current}/{total}): {channel}",
+            "text_error": "Error creating text channel {channel}: {error}",
+            "voice_created": "Voice channel created ({current}/{total}): {channel}",
+            "voice_error": "Error creating voice channel {channel}: {error}"
+        },
+        "clone": {
+            "connected": "Connected as: {user}",
+            "initializing": "Initializing cloning...",
+            "server_not_found": "Servers not found",
+            "completed": "Cloning completed in {time:.2f} seconds",
+            "error": "Error during cloning: {error}",
+            "connection_error": "Connection error: {error}"
+        },
+        "debug": {
+            "file_enabled": "File logging enabled",
+            "file_disabled": "File logging disabled"
+        }
+    }
+} 

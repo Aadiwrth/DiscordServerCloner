@@ -1,0 +1,14 @@
+{
+    "appearance": {
+        "theme": "dark"
+    },
+    "language": {
+        "current": "en-US"
+    },
+    "debug": {
+        "enabled": 1,
+        "save_logs": 1,
+        "show_timing": 1,
+        "show_api": 1
+    }
+}
