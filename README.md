@@ -1,6 +1,5 @@
 # DiscordServerCloner
-A complete tool to copy messages, roles and everything else from any discord server. I created this project as a hobby, I hope it will be useful to someone.
-
+DiscordServerCloner is a program that can clone any discord server as a whole; it has the ability to clone roles, channels, and messages. Due to security restrictions it is not possible to clone all messages from a server, but if it is a small server with few messages the cloning should happen.
 ## Disclaimer
 This project is for educational purposes , I am not responsible for any abuse of systems or malicious uses of the code in this repository. 
 
