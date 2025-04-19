@@ -2,6 +2,9 @@
 
 An application that allows you to easily clone a Discord server, including roles, categories, text channels, voice channels, and messages.
 
+
+<img  src="https://github.com/seregonwar/DiscordServerCloner/blob/main/src/interface/assets/discord_logo.png" alt="R.E.P.O Save Editor logo" width="512">
+
 ## Features
 
 - **Intuitive graphical interface**: Easy to use thanks to the modern user interface
@@ -14,9 +17,6 @@ An application that allows you to easily clone a Discord server, including roles
 - **Multilingual**: Support for Italian and English
 - **Customizable**: Light and dark themes
 
-## Screenshot
-
-![Application screenshot](screenshot.png)
 
 ## Prerequisites
 
@@ -94,6 +94,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 
 ## GUI
-![Main interface](https://github.com/user-attachments/assets/f69bc820-c85b-49c4-a52c-e97e3a9f265d)
-![Settings panel](https://github.com/user-attachments/assets/41e00e89-24ab-4ea5-aae5-36d166d4f450)
-![Cloning process](https://github.com/user-attachments/assets/ba883570-e996-466f-8511-02c1c88f5e9e)
+![Main interface](https://github.com/user-attachments/assets/9a417fd9-cb31-4a1f-8ff1-be0a5dd6b352)
+![Settings panel](https://github.com/user-attachments/assets/b6dd3177-e82f-4279-8d7a-7ba1d8e18cea)
+
