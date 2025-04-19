@@ -50,12 +50,19 @@ class Colors:
         "light": "#2E3338"     # Dark gray hover in light mode
     }
     
+    # Bordi e divisori
+    BORDER = {
+        "dark": "#2D2F33",     # Bordi scuri in tema scuro
+        "light": "#C7CCD1"     # Bordi chiari in tema chiaro
+    }
+    
     # States
     ERROR = "#ED4245"         # Discord Red
     SUCCESS = "#57F287"       # Discord Green
     WARNING = "#FEE75C"       # Discord Yellow
     LINK = "#00B0F4"          # Discord Blue
     DISABLED = "#72767D"      # Disabled gray
+    SUCCESS_DARK = "#45C269"  # Verde più scuro
 
     @staticmethod
     def get_color(color_dict, mode="dark"):

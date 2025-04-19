@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from typing import Dict
 
 class LanguageManager:
@@ -16,13 +17,48 @@ class LanguageManager:
         return cls._instance
     
     def _load_translations(self):
-        """Load all available translations"""
-        language_dir = os.path.join("src", "interface", "language")
-        for file in os.listdir(language_dir):
-            if file.endswith(".json"):
-                lang_code = file.split(".")[0]
-                with open(os.path.join(language_dir, file), "r", encoding="utf-8") as f:
-                    self._translations[lang_code] = json.load(f)
+        """Carica le traduzioni dai file JSON"""
+        self._translations = {}
+        
+        # Determina il percorso base dell'applicazione (funziona sia in modalità di sviluppo che compilata)
+        if getattr(sys, 'frozen', False):
+            # Se l'app è compilata con PyInstaller
+            base_path = sys._MEIPASS
+        else:
+            # In modalità di sviluppo
+            base_path = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
+        
+        language_dir = os.path.join(base_path, "src", "interface", "language")
+        
+        # Percorso alternativo se il primo non esiste
+        if not os.path.exists(language_dir):
+            language_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "language")
+        
+        print(f"Looking for language files in: {language_dir}")
+        
+        if os.path.exists(language_dir):
+            for filename in os.listdir(language_dir):
+                if filename.endswith(".json"):
+                    lang_code = filename.split(".")[0]
+                    file_path = os.path.join(language_dir, filename)
+                    try:
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            self._translations[lang_code] = json.load(f)
+                            print(f"Loaded language file: {filename}")
+                    except Exception as e:
+                        print(f"Error loading language file {filename}: {e}")
+        else:
+            print(f"Language directory not found: {language_dir}")
+        
+        # Fallback to English if no translations loaded
+        if not self._translations:
+            print("No language files found, using hardcoded English")
+            self._translations["en-US"] = {
+                "app": {
+                    "title": "Discord Server Cloner",
+                    "subtitle": "Clone servers with ease"
+                }
+            }
     
     def get_text(self, key: str, **kwargs) -> str:
         """

@@ -1,0 +1,11 @@
+discord.py>=2.3.0
+customtkinter>=5.2.0
+Pillow>=10.0.0
+requests>=2.31.0
+aiohttp>=3.8.5
+colorama>=0.4.6
+asyncio>=3.4.3
+typing>=3.7.4.3
+PyInstaller>=6.0.0
+webbrowser
+json 

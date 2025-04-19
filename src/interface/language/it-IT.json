@@ -1,7 +1,8 @@
 {
     "app": {
         "title": "Discord Server Cloner",
-        "subtitle": "Clona facilmente il tuo server Discord"
+        "subtitle": "Clona facilmente il tuo server Discord",
+        "about_description": "Discord Server Cloner è un'applicazione che permette di clonare facilmente la struttura di un server Discord, inclusi ruoli, canali e messaggi. Creato per semplificare la migrazione o il backup dei server Discord."
     },
     "settings": {
         "title": "Impostazioni",
@@ -39,18 +40,42 @@
             "title": "Token Discord",
             "placeholder": "Inserisci il tuo token Discord",
             "help": "Come ottenere il token?",
-            "help_text": "Come ottenere il tuo token Discord:\n\n1. Apri Discord nel browser\n2. Premi F12 per aprire gli strumenti sviluppatore\n3. Vai nella sezione Network\n4. Cerca una richiesta che inizia con 'science'\n5. Nelle intestazioni (Headers) cerca 'authorization'\n\n⚠️ Attenzione: Non condividere mai il tuo token con nessuno!"
+            "help_text": "Come ottenere il tuo token Discord:\n\n1. Apri Discord nel browser\n2. Premi F12 per aprire gli strumenti sviluppatore\n3. Vai nella sezione Network\n4. Cerca una richiesta che inizia con 'science'\n5. Nelle intestazioni (Headers) cerca 'authorization'\n\n⚠️ Attenzione: Non condividere mai il tuo token con nessuno!",
+            "error_empty": "Inserisci il token Discord",
+            "error_invalid": "Token Discord non valido",
+            "verify_button": "Verifica",
+            "verifying": "Verifica..."
         },
         "guild": {
             "source": {
                 "title": "Server Sorgente",
-                "placeholder": "ID del server da copiare"
+                "placeholder": "ID del server da copiare",
+                "error_empty": "Inserisci l'ID del server sorgente"
             },
             "destination": {
                 "title": "Server Destinazione",
-                "placeholder": "ID del server dove copiare"
+                "placeholder": "ID del server dove copiare",
+                "error_empty": "Inserisci l'ID del server destinazione"
             },
-            "clone_button": "Inizia Clonazione"
+            "dropdown_placeholder": "Seleziona un server",
+            "clone_button": "Inizia Clonazione",
+            "reset_button": "Cancella",
+            "options_title": "Opzioni di Clonazione",
+            "option_roles": "Clona ruoli",
+            "option_categories": "Clona categorie",
+            "option_text_channels": "Clona canali testuali",
+            "option_voice_channels": "Clona canali vocali",
+            "option_messages": "Clona messaggi",
+            "option_messages_limit": "Limite messaggi:",
+            "error_invalid_limit": "Il limite dei messaggi deve essere un numero positivo",
+            "stats_title": "Statistiche Clonazione",
+            "stats_roles": "Ruoli creati:",
+            "stats_channels": "Canali creati:",
+            "stats_messages": "Messaggi copiati:",
+            "stats_errors": "Errori rilevati:",
+            "stats_time": "Tempo trascorso:",
+            "error_same_ids": "I server sorgente e destinazione non possono essere uguali",
+            "error_invalid_id": "Gli ID server devono essere numeri"
         }
     },
     "status": {
@@ -58,7 +83,12 @@
         "cloning": "Clonazione in corso...",
         "success": "Clonazione completata!",
         "error": "Errore durante la clonazione",
-        "connecting": "Connessione in corso..."
+        "connecting": "Connessione in corso...",
+        "connected": "Connesso come: {user}",
+        "connection_error": "Errore di connessione: {error}",
+        "guilds_loaded": "Caricati {count} server",
+        "source_selected": "Server sorgente selezionato: {name}",
+        "destination_selected": "Server destinazione selezionato: {name}"
     },
     "debug_window": {
         "title": "Console Debug",

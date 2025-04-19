@@ -1,14 +1,14 @@
 {
     "appearance": {
-        "theme": "dark"
+        "theme": "system"
     },
     "language": {
-        "current": "en-US"
+        "current": "it-IT"
     },
     "debug": {
         "enabled": 1,
         "save_logs": 1,
-        "show_timing": 1,
-        "show_api": 1
+        "show_timing": 0,
+        "show_api": 0
     }
 }
