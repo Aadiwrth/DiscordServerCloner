@@ -1,4 +1,6 @@
 # Discord Server Cloner
+![Github All Releases](https://img.shields.io/github/downloads/seregonwar/DiscordServerCloner/total.svg)
+
 
 An application that allows you to easily clone a Discord server, including roles, categories, text channels, voice channels, and messages.
 
