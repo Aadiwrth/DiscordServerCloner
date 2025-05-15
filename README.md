@@ -30,7 +30,7 @@ An application that allows you to easily clone a Discord server, including roles
 
 ### Option 1: Pre-compiled executable
 
-1. Download the latest version from the [Releases](https://github.com/yourusername/DiscordServerCloner/releases) section
+1. Download the latest version from the [Releases](https://github.com/seregonwar/DiscordServerCloner/releases) section
 2. Extract the ZIP file
 3. Run `Discord Server Cloner.exe`
 
