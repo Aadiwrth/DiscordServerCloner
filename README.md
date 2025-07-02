@@ -38,7 +38,7 @@ An application that allows you to easily clone a Discord server, including roles
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/DiscordServerCloner.git
+   git clone https://github.com/sergonwar/DiscordServerCloner.git
    cd DiscordServerCloner
    ```
 
