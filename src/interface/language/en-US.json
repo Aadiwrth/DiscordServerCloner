@@ -19,7 +19,8 @@
             "languages": {
                 "it-IT": "Italiano",
                 "en-US": "English",
-                "es-ES": "Español"
+                "es-ES": "Español",
+                "fr-FR": "Français"
             }
         },
         "debug": {
