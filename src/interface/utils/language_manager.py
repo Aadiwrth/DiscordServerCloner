@@ -89,7 +89,9 @@ class LanguageManager:
         lang_map = {
             "English": "en-US",
             "Italiano": "it-IT",
-            "Español": "es-ES"
+            "Español": "es-ES",
+            "Français": "fr-FR",
+            "Nepali": "np-NP"
         }
         
         lang_code = lang_map.get(lang_code, lang_code)
@@ -103,7 +105,7 @@ class LanguageManager:
     def get_available_languages(self) -> dict:
         """
         Returns available languages in format:
-        {"it-IT": "Italiano", "en-US": "English", ...}
+        {"it-IT": "Italiano", "en-US": "English", "fr-FR": "Français", "np-NP": "Nepali" ...}
         """
         languages = {}
         for lang_code in self._translations.keys():

@@ -124,7 +124,9 @@ class SettingsPanel(ctk.CTkFrame):
         self.language_map = {
             "it-IT": self.lang.get_text("settings.language.languages.it-IT"),
             "en-US": self.lang.get_text("settings.language.languages.en-US"),
-            "es-ES": self.lang.get_text("settings.language.languages.es-ES")
+            "es-ES": self.lang.get_text("settings.language.languages.es-ES"),
+            "fr-FR": self.lang.get_text("settings.language.languages.fr-FR"),
+            "np-NP": self.lang.get_text("settings.language.languages.np-NP")
         }
         
         # Reverse the map to find the code from the name
@@ -371,7 +373,10 @@ class SettingsPanel(ctk.CTkFrame):
             self.language_menu.configure(values=[
                 lang.get_text("settings.language.languages.it-IT"),
                 lang.get_text("settings.language.languages.en-US"),
-                lang.get_text("settings.language.languages.es-ES")
+                lang.get_text("settings.language.languages.es-ES"),
+                lang.get_text("settings.language.languages.fr-FR"),
+                lang.get_text("settings.language.languages.np-NP"),
+                
             ])
         
         # Update the debug description text
