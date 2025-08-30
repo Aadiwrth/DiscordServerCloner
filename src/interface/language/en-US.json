@@ -63,6 +63,7 @@
             "reset_button": "Clear",
             "options_title": "Cloning Options",
             "option_roles": "Clone roles",
+            "option_michelleneous": "Clone Name and icon",
             "option_categories": "Clone categories",
             "option_text_channels": "Clone text channels",
             "option_voice_channels": "Clone voice channels",
