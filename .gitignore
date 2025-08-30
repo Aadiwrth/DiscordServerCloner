@@ -1,5 +1,9 @@
-# Ignore Python cache files
+# Python cache
 __pycache__/
 *.pyc
 
+# Virtual environment
+.venv/
+
+# Config (local settings)
 src/interface/config/
