@@ -3,6 +3,8 @@ from PIL import Image
 import os
 import threading
 import webbrowser
+import requests
+import io
 
 from src.interface.components.header import Header
 from src.interface.components.token_input import TokenInput
@@ -72,8 +74,7 @@ class MainWindow(ctk.CTk):
         # Icona dell'applicazione
         icon_path = os.path.join("src", "interface", "assets", "discord_logo.png")
         if os.path.exists(icon_path):
-            # Non possiamo usare iconbitmap con immagini PNG 
-            # quindi non impostiamo l'icona se non è in formato .ico
+       
             pass
         
         # Colori personalizzati
@@ -104,6 +105,28 @@ class MainWindow(ctk.CTk):
             fg_color=Colors.get_color(Colors.BORDER)
         )
         shadow_frame.pack(side="right", fill="y")
+        
+        # Header profilo utente (nome + avatar) in alto nella sidebar
+        self.profile_frame = ctk.CTkFrame(
+            self.sidebar,
+            fg_color="transparent",
+            corner_radius=0
+        )
+        self.profile_frame.pack(fill="x", padx=10, pady=(10, 6), side="top")
+        self.profile_frame.grid_propagate(False)
+
+        self.profile_avatar_label = ctk.CTkLabel(self.profile_frame, text="", width=40, height=40)
+        self.profile_avatar_label.pack(side="left")
+
+        self.profile_texts = ctk.CTkFrame(self.profile_frame, fg_color="transparent")
+        self.profile_texts.pack(side="left", padx=10)
+        self.profile_name_label = ctk.CTkLabel(self.profile_texts, text="Not signed in", font=ctk.CTkFont(size=13, weight="bold"))
+        self.profile_name_label.pack(anchor="w")
+        self.profile_sub_label = ctk.CTkLabel(self.profile_texts, text="", font=ctk.CTkFont(size=11), text_color=Colors.get_color(Colors.TEXT_MUTED))
+        self.profile_sub_label.pack(anchor="w")
+
+        self._profile_image_ref = None  # keep CTkImage ref
+        self._profile_loaded = False
         
         # Rimozione completa del contenitore dell'icona per massimizzare lo spazio
             
@@ -210,56 +233,7 @@ class MainWindow(ctk.CTk):
         )
         self.settings_visible = False
         
-        # Settings Button with icon
-        try:
-            # Correct path to the image
-            settings_image = Image.open(os.path.join("src", "interface", "assets", "settings.png"))
-            settings_image = settings_image.convert("RGBA")  # Convert to RGBA for transparency
-            
-            # Create different versions for light and dark modes
-            from PIL import ImageOps
-            
-            # Create dark version for light mode (black icon)
-            dark_image = ImageOps.colorize(settings_image.convert('L'), black="#1a1a1a", white="#1a1a1a")
-            dark_image = dark_image.convert("RGBA")
-            
-            # Create light version for dark mode (white icon)
-            light_image = ImageOps.colorize(settings_image.convert('L'), black="#ffffff", white="#ffffff")
-            light_image = light_image.convert("RGBA")
-            
-            # Create the CTk icon with appropriate colors for each mode
-            self.settings_icon = ctk.CTkImage(
-                light_image=dark_image,  # Dark icon for light mode
-                dark_image=light_image,   # Light icon for dark mode
-                size=(30, 30)  # Increased size for better visibility
-            )
-            
-            # Create the button with the icon - moved to sidebar
-            self.settings_button = ctk.CTkButton(
-                self.sidebar,
-                text=self.lang.get_text("settings.title"),
-                image=self.settings_icon,
-                height=45,
-                command=self.toggle_settings,
-                fg_color="transparent",
-                text_color=Colors.get_color(Colors.TEXT),
-                hover_color=Colors.get_color(Colors.PRIMARY),
-                anchor="w",
-                corner_radius=8,
-                border_width=1,
-                border_color=Colors.get_color(Colors.BORDER)
-            )
-            self.settings_button.pack(fill="x", padx=10, pady=(10, 5), side="bottom")
-            
-            # Add hover effects
-            self.add_button_hover_effects(self.settings_button)
-            
-        except Exception as e:
-            print(f"Error loading settings icon: {e}")
-            # Fallback to text if the icon cannot be loaded
-            pass
-        
-        # Always create button with emoji icon for better visibility
+        # Settings Button with emoji icon for better visibility
         self.settings_button = ctk.CTkButton(
             self.sidebar,
             text="⚙️ " + self.lang.get_text("settings.title"),
@@ -341,6 +315,9 @@ class MainWindow(ctk.CTk):
         
         # Placeholder for embedded advanced explorer frame
         self.embedded_explorer = None
+
+        # Avvia controllo periodico per caricare il profilo quando il token è disponibile
+        self.after(600, self._maybe_load_profile)
         
     def show_about(self):
         """Mostra la finestra di about"""
@@ -728,6 +705,72 @@ class MainWindow(ctk.CTk):
                 print(f"Errore nell'applicazione delle transizioni: {e}")
         
         apply_transitions_recursive(self)
+
+    def _maybe_load_profile(self):
+        """Se il token è stato verificato e il profilo non è ancora caricato, avvia il fetch."""
+        try:
+            if self.verified_token and not self._profile_loaded:
+                threading.Thread(target=self._load_user_profile_thread, daemon=True).start()
+        finally:
+            # ricontrolla periodicamente, così se l'utente verifica il token dopo
+            self.after(1000, self._maybe_load_profile)
+
+    def _load_user_profile_thread(self):
+        """Carica i dati utente Discord e aggiorna la UI (thread secondario)."""
+        token = self.verified_token
+        if not token:
+            return
+        headers = {"Authorization": token, "Content-Type": "application/json"}
+        user_api = "https://discord.com/api/v10/users/@me"
+        user = None
+        try:
+            resp = requests.get(user_api, headers=headers, timeout=8)
+            if resp.status_code == 200:
+                user = resp.json()
+            else:
+                user = None
+        except Exception:
+            user = None
+
+        def finish():
+            if not user:
+                return
+            # Ricava nome visualizzato e avatar URL
+            username = user.get("global_name") or user.get("username") or "User"
+            user_id = user.get("id")
+            avatar = user.get("avatar")
+            avatar_url = None
+            if user_id and avatar:
+                avatar_url = f"https://cdn.discordapp.com/avatars/{user_id}/{avatar}.png?size=64"
+
+            photo = None
+            if avatar_url:
+                try:
+                    img_resp = requests.get(avatar_url, timeout=6)
+                    if img_resp.status_code == 200:
+                        img = Image.open(io.BytesIO(img_resp.content)).convert("RGBA")
+                        # Usa CTkImage per HiDPI
+                        photo = ctk.CTkImage(light_image=img, dark_image=img, size=(40, 40))
+                except Exception:
+                    photo = None
+
+            # Aggiorna UI
+            try:
+                self.profile_name_label.configure(text=username)
+                # sotto-etichetta opzionale: @username
+                tag = user.get("username")
+                if tag:
+                    self.profile_sub_label.configure(text=f"@{tag}")
+                if photo:
+                    self._profile_image_ref = photo
+                    self.profile_avatar_label.configure(image=photo, text="")
+                else:
+                    self.profile_avatar_label.configure(text="🙂", image=None)
+                self._profile_loaded = True
+            except Exception:
+                pass
+
+        self.after(0, finish)
     
     def on_feature_toggle(self, feature_name, enabled):
         """Handle feature toggle changes from settings panel"""

@@ -381,9 +381,28 @@ class GuildInput(ctk.CTkFrame):
             hover_color=Colors.get_color(Colors.TEXT_MUTED, ctk.get_appearance_mode().lower())
         )
         self.clone_button.pack(pady=10)
-        
+
+        # Cancel Button (initially hidden)
+        self.cancel_button = ctk.CTkButton(
+            self.main_frame,
+            text="Cancel",
+            command=self.cancel_clone,
+            height=36,
+            font=ctk.CTkFont(size=13, weight="bold"),
+            fg_color=Colors.get_color(Colors.DANGER if hasattr(Colors, 'DANGER') else Colors.TEXT, ctk.get_appearance_mode().lower()),
+            text_color=Colors.get_color(Colors.BACKGROUND, ctk.get_appearance_mode().lower()),
+            hover_color=Colors.get_color(Colors.TEXT_MUTED, ctk.get_appearance_mode().lower())
+        )
+        # Do not pack yet; shown when cloning starts
+
         # Discord client
         self.client = None
+
+        # Clone task threading state
+        self._clone_thread = None
+        self._clone_loop = None
+        self._clone_task = None
+        self._cancel_requested = False
         
         # Update colors when theme changes
         self._update_colors()
@@ -410,12 +429,18 @@ class GuildInput(ctk.CTkFrame):
             )
 
     def update_progress(self, value, show=True):
-        """Update progress bar value and visibility"""
-        if show and not self.progress.winfo_ismapped():
-            self.progress.pack(fill="x", pady=(0, 10))
-        elif not show and self.progress.winfo_ismapped():
-            self.progress.pack_forget()
-        self.progress.set(value)
+        """Update progress bar value and visibility (thread-safe)."""
+        def _apply():
+            if show and not self.progress.winfo_ismapped():
+                self.progress.pack(fill="x", pady=(0, 10))
+            elif not show and self.progress.winfo_ismapped():
+                self.progress.pack_forget()
+            self.progress.set(value)
+        try:
+            # Marshal to main thread
+            self.after(0, _apply)
+        except Exception:
+            _apply()
     
     def update_advanced_explorer_visibility(self, enabled):
         """Update the visibility of advanced explorer buttons based on settings"""
@@ -820,8 +845,53 @@ class GuildInput(ctk.CTkFrame):
         # Mostra la progress bar
         self.update_progress(0, True)
         
-        # Esegui il clone
-        asyncio.run(self._clone_guild(token, source_id, dest_id))
+        # Prepare cancellation and show cancel button
+        self._cancel_requested = False
+        if not self.cancel_button.winfo_ismapped():
+            self.cancel_button.pack(pady=(0, 10))
+            self.cancel_button.configure(state="normal")
+        
+        # Run cloning in background thread with its own event loop
+        def worker():
+            try:
+                loop = asyncio.new_event_loop()
+                self._clone_loop = loop
+                asyncio.set_event_loop(loop)
+                self._clone_task = loop.create_task(self._clone_guild(token, source_id, dest_id))
+                try:
+                    loop.run_until_complete(self._clone_task)
+                except asyncio.CancelledError:
+                    # Task was cancelled
+                    pass
+            finally:
+                try:
+                    loop.close()
+                except Exception:
+                    pass
+                self._clone_loop = None
+                self._clone_task = None
+                self._clone_thread = None
+        
+        self._clone_thread = threading.Thread(target=worker, daemon=True)
+        self._clone_thread.start()
+
+    def cancel_clone(self):
+        """Request cancellation of the running clone task."""
+        if self._clone_loop and self._clone_task:
+            self._cancel_requested = True
+            def _cancel():
+                if not self._clone_task.done():
+                    self._clone_task.cancel()
+            try:
+                self._clone_loop.call_soon_threadsafe(_cancel)
+            except Exception:
+                pass
+            # Update UI indication
+            self._debug_log(self.lang.get_text("status.cancelling") if hasattr(self.lang, 'get_text') else "Cancelling...", "INFO")
+            try:
+                self.cancel_button.configure(state="disabled")
+            except Exception:
+                pass
     
     async def _clone_guild(self, token, source_id, dest_id):
         """Execute server cloning process using REST API"""
@@ -843,7 +913,7 @@ class GuildInput(ctk.CTkFrame):
                 "Content-Type": "application/json"
             }
             
-            # Mostriamo la barra di progresso e impostiamo a 0
+            # Mostra la barra di progresso e impostiamo a 0
             self.update_progress(0, show=True)
             
             # Nascondiamo le statistiche all'inizio
@@ -927,6 +997,10 @@ class GuildInput(ctk.CTkFrame):
                         }
                     )
                     
+                    if self._cancel_requested:
+                        self._debug_log(self.lang.get_text("status.cancelled") if hasattr(self.lang, 'get_text') else "Cloning cancelled", "INFO")
+                        self.update_progress(0, show=False)
+                        return
                     if success:
                         # Impostiamo la barra al 100% al completamento
                         self.update_progress(1.0)
@@ -954,7 +1028,14 @@ class GuildInput(ctk.CTkFrame):
                 await asyncio.sleep(0.1)  # Piccola pausa per assicurarsi che il task venga cancellato
             
             # Ripristiniamo il pulsante
-            self.clone_button.configure(state="normal")
+            def _restore_ui():
+                self.clone_button.configure(state="normal")
+                if self.cancel_button.winfo_ismapped():
+                    self.cancel_button.pack_forget()
+            try:
+                self.after(0, _restore_ui)
+            except Exception:
+                _restore_ui()
             
             # Chiudiamo il connector anche in caso di errore
             if connector:
@@ -962,22 +1043,28 @@ class GuildInput(ctk.CTkFrame):
                     await connector.close()
                 except Exception as connector_error:
                     print(f"Error closing connector: {connector_error}")
+    
 
     def _debug_log(self, message, level="INFO"):
-        """Send log to debug window if active"""
-        main_window = self.winfo_toplevel()
-        if hasattr(main_window, 'debug_mode') and main_window.debug_mode:
-            if hasattr(main_window, 'debug_window'):
-                try:
-                    # Verifichiamo che la finestra di debug esista ancora e sia valida
-                    if main_window.debug_window.winfo_exists():
-                        main_window.debug_window.log(message, level)
-                except Exception as e:
-                    print(f"Debug window error: {e}")
-        
-        # Always update status bar
-        color = "red" if level == "ERROR" else "blue" if level == "INFO" else "green"
-        main_window.status_bar.update_status(message, color)
+        """Send log to debug window if active (thread-safe)"""
+        def _apply():
+            main_window = self.winfo_toplevel()
+            if hasattr(main_window, 'debug_mode') and main_window.debug_mode:
+                if hasattr(main_window, 'debug_window'):
+                    try:
+                        # Verifichiamo che la finestra di debug esista ancora e sia valida
+                        if main_window.debug_window.winfo_exists():
+                            main_window.debug_window.log(message, level)
+                    except Exception as e:
+                        print(f"Debug window error: {e}")
+            # Always update status bar
+            color = "red" if level == "ERROR" else "blue" if level == "INFO" else "green"
+            main_window.status_bar.update_status(message, color)
+        try:
+            self.after(0, _apply)
+        except Exception:
+            _apply()
+    
 
     def update_texts(self):
         """Update texts when language changes"""
@@ -1013,30 +1100,38 @@ class GuildInput(ctk.CTkFrame):
         self.time_label.configure(text=self.lang.get_text("input.guild.stats_time"))
 
     def update_stats(self, stats: dict):
-        """Aggiorna il pannello delle statistiche con i dati forniti"""
-        # Assicuriamoci che il pannello sia visibile
-        if not self.info_panel.winfo_ismapped():
-            self.info_panel.pack(fill="x", pady=10, before=self.clone_button)
-            
-        # Aggiorniamo i valori
-        self.roles_value.configure(text=f"{stats.get('roles_created', 0)}/{stats.get('total_roles', 0)}")
-        self.channels_value.configure(text=f"{stats.get('channels_created', 0)}/{stats.get('total_channels', 0)}")
-        self.messages_value.configure(text=str(stats.get('messages_copied', 0)))
-        
-        # Errori in rosso se presenti
-        errors = stats.get('errors', 0)
-        self.errors_value.configure(text=str(errors))
-        
-        # Formattiamo il tempo in minuti:secondi
-        elapsed_time = stats.get('elapsed_time', 0)
-        minutes = int(elapsed_time // 60)
-        seconds = int(elapsed_time % 60)
-        self.time_value.configure(text=f"{minutes:02d}:{seconds:02d}")
+        """Aggiorna il pannello delle statistiche con i dati forniti (thread-safe)"""
+        def _apply():
+            # Assicuriamoci che il pannello sia visibile
+            if not self.info_panel.winfo_ismapped():
+                self.info_panel.pack(fill="x", pady=10, before=self.clone_button)
+            # Aggiorniamo i valori
+            self.roles_value.configure(text=f"{stats.get('roles_created', 0)}/{stats.get('total_roles', 0)}")
+            self.channels_value.configure(text=f"{stats.get('channels_created', 0)}/{stats.get('total_channels', 0)}")
+            self.messages_value.configure(text=str(stats.get('messages_copied', 0)))
+            # Errori in rosso se presenti
+            errors = stats.get('errors', 0)
+            self.errors_value.configure(text=str(errors))
+            # Formattiamo il tempo in minuti:secondi
+            elapsed_time = stats.get('elapsed_time', 0)
+            minutes = int(elapsed_time // 60)
+            seconds = int(elapsed_time % 60)
+            self.time_value.configure(text=f"{minutes:02d}:{seconds:02d}")
+        try:
+            self.after(0, _apply)
+        except Exception:
+            _apply()
         
     def hide_stats(self):
-        """Nasconde il pannello delle statistiche"""
-        if self.info_panel.winfo_ismapped():
-            self.info_panel.pack_forget()
+        """Nasconde il pannello delle statistiche (thread-safe)"""
+        def _apply():
+            if self.info_panel.winfo_ismapped():
+                self.info_panel.pack_forget()
+        try:
+            self.after(0, _apply)
+        except Exception:
+            _apply()
+    
 
     def toggle_messages_options(self):
         """Abilita/disabilita le opzioni relative ai messaggi"""
@@ -1102,46 +1197,74 @@ class GuildInput(ctk.CTkFrame):
         self._debug_log(f"Creazione nuovo server: {guild_name}", "INFO")
         
         try:
-            # Creiamo un connector sicuro per evitare memory leak
             connector = aiohttp.TCPConnector(force_close=True)
             
-            # URL dell'API per creare un nuovo server
-            api_url = "https://discord.com/api/v10/guilds"
+
+            api_url = "https://discord.com/api/v9/guilds"
             
-            # Prepariamo l'header per le richieste API - assicuriamoci che il token sia nel formato corretto
             if not token.startswith("Bot ") and not token.startswith("Bearer "):
-                # Se non è specificato il tipo di token, assumiamo che sia un user token
                 auth_token = token
             else:
                 auth_token = token
+            
+            if auth_token.startswith("Bot "):
+                return {"success": False, "error": "Guild creation via API requires a user token. A Bot token cannot create servers (403 Forbidden)."}
                 
             headers = {
                 "Authorization": auth_token,
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
             }
             
-            # Dati per la creazione del server
             guild_data = {
-                "name": guild_name,
-                "region": "eu-central", # Regione predefinita
-                "icon": None,          # Nessuna icona iniziale
-                "verification_level": 0 # Livello di verifica più basso
+                "name": guild_name
             }
             
+            max_retries = 3
+            attempt = 0
             async with aiohttp.ClientSession(connector=connector, headers=headers) as session:
-                async with session.post(api_url, json=guild_data) as response:
-                    if response.status == 201: # 201 Created
-                        # Server creato con successo
-                        result = await response.json()
-                        guild_id = result.get("id")
-                        guild_name = result.get("name")
-                        self._debug_log(f"Server creato: {guild_name} (ID: {guild_id})", "SUCCESS")
-                        return {"success": True, "id": guild_id, "name": guild_name}
-                    else:
-                        # Errore nella creazione
-                        error_data = await response.text()
-                        self._debug_log(f"Errore nella creazione del server: {response.status} - {error_data}", "ERROR")
-                        return {"success": False, "error": f"Errore API ({response.status}): {error_data}"}
+                while attempt <= max_retries:
+                    if attempt > 0:
+                        self._debug_log(f"Retry creazione server, tentativo {attempt}/{max_retries}", "WARN")
+                    async with session.post(api_url, json=guild_data) as response:
+                        if response.status == 201:
+                            result = await response.json()
+                            guild_id = result.get("id")
+                            guild_name = result.get("name")
+                            self._debug_log(f"Server creato: {guild_name} (ID: {guild_id})", "SUCCESS")
+                            return {"success": True, "id": guild_id, "name": guild_name}
+                        
+                        if response.status == 429:
+                            retry_after = None
+                            header_val = response.headers.get("Retry-After")
+                            if header_val:
+                                try:
+                                    retry_after = float(header_val)
+                                except Exception:
+                                    retry_after = None
+                            if retry_after is None:
+                                try:
+                                    err = await response.json()
+                                    retry_after = float(err.get("retry_after", 1))
+                                except Exception:
+                                    retry_after = 1.0
+                            retry_after = max(0.5, min(retry_after, 15.0))
+                            self._debug_log(f"Rate limited (429). Attendo {retry_after}s prima del retry.", "WARN")
+                            attempt += 1
+                            if attempt > max_retries:
+                                return {"success": False, "error": f"Errore API (429): Le tue azioni sono limitate. Riprova tra {retry_after:.0f}s."}
+                            await asyncio.sleep(retry_after)
+                            continue
+
+                        try:
+                            error_json = await response.json()
+                            msg = error_json.get("message") or str(error_json)
+                            code = error_json.get("code")
+                            details = f"{msg} (code={code})" if code is not None else msg
+                        except Exception:
+                            details = await response.text()
+                        self._debug_log(f"Errore nella creazione del server: {response.status} - {details}", "ERROR")
+                        return {"success": False, "error": f"Errore API ({response.status}): {details}"}
         except Exception as e:
             self._debug_log(f"Errore imprevisto: {str(e)}", "ERROR")
             return {"success": False, "error": str(e)}
@@ -1150,7 +1273,6 @@ class GuildInput(ctk.CTkFrame):
         """Mostra un dialogo per creare un nuovo server Discord"""
         main_window = self.winfo_toplevel()
         
-        # Verifica se abbiamo un token
         token = main_window.verified_token if hasattr(main_window, 'verified_token') else main_window.token_input.entry.get()
         
         if not token:
@@ -1160,7 +1282,6 @@ class GuildInput(ctk.CTkFrame):
             )
             return
         
-        # Chiedi il nome del nuovo server
         server_name = simpledialog.askstring(
             self.lang.get_text("input.guild.create_server_title"), 
             self.lang.get_text("input.guild.create_server_prompt"),
@@ -1168,12 +1289,10 @@ class GuildInput(ctk.CTkFrame):
         )
         
         if not server_name:
-            return  # Utente ha annullato
+            return
             
-        # Disabilita i controlli durante la creazione
         self.create_server_button.configure(state="disabled")
         
-        # Aggiorna la barra di stato
         main_window.status_bar.update_status(
             self.lang.get_text("status.creating_server").format(name=server_name), 
             "blue"

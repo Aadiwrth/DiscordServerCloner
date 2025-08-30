@@ -90,7 +90,11 @@
             "channels_no_category": "Senza categoria",
             "view_messages": "Visualizza messaggi",
             "hide_messages": "Nascondi messaggi",
-            "select_guild": "Seleziona Server"
+            "select_guild": "Seleziona Server",
+            "search_title": "Seleziona Server",
+            "channels_list": "Canali",
+            "members_list": "Membri",
+            "create_server_error": "Errore creazione server"
         }
     },
     "status": {
@@ -100,6 +104,8 @@
         "error": "Errore durante la clonazione",
         "connecting": "Connessione in corso...",
         "connected": "Connesso come: {user}",
+        "loading": "Caricamento...",
+        "update_available": "Aggiornamento disponibile: v{version}",
         "connection_error": "Errore di connessione: {error}",
         "guilds_loaded": "Caricati {count} server",
         "source_selected": "Server sorgente selezionato: {name}",
@@ -107,6 +113,10 @@
         "advanced_mode_enabled": "Modalità avanzata attivata",
         "advanced_mode_disabled": "Modalità avanzata disattivata",
         "advanced_mode_auto_opened": "Modalità avanzata aperta automaticamente all'avvio"
+    },
+    "advanced": {
+        "view_messages": "Visualizza messaggi",
+        "select_guild": "Seleziona Server"
     },
     "advanced_explorer": {
         "title": "Esploratore Avanzato",

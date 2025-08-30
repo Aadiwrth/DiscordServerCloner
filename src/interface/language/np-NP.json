@@ -90,7 +90,11 @@
             "channels_no_category": "Koi category chaina",
             "view_messages": "Messages herne",
             "hide_messages": "Messages lukaaune",
-            "select_guild": "Server select garne"
+            "select_guild": "Server select garne",
+            "search_title": "Server select garne",
+            "channels_list": "Channels",
+            "members_list": "Members",
+            "create_server_error": "Server create garna error"
         }
     },
     "status": {
@@ -100,6 +104,8 @@
         "error": "Error during cloning",
         "connecting": "Connecting...",
         "connected": "Connected as: {user}",
+        "loading": "लोड हुँदै...",
+        "update_available": "अपडेट उपलब्ध: v{version}",
         "connection_error": "Connection error: {error}",
         "guilds_loaded": "{count} servers loaded",
         "source_selected": "Source server selected: {name}",
@@ -107,6 +113,10 @@
         "advanced_mode_enabled": "उन्नत मोड सक्षम गरियो",
         "advanced_mode_disabled": "उन्नत मोड असक्षम गरियो",
         "advanced_mode_auto_opened": "स्टार्टअपमा उन्नत मोड स्वचालित रूपमा खोलियो"
+    },
+    "advanced": {
+        "view_messages": "सन्देशहरू हेर्नुहोस्",
+        "select_guild": "सर्भर चयन गर्नुहोस्"
     },
     "advanced_explorer": {
         "title": "उन्नत एक्सप्लोरर",

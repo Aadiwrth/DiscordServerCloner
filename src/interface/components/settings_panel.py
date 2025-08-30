@@ -5,6 +5,12 @@ from src.interface.components.debug_window import DebugWindow
 from src.interface.utils.language_manager import LanguageManager
 from src.interface.utils.settings_manager import SettingsManager
 from src.interface.styles.colors import Colors
+from src.interface.utils.version import CURRENT_VERSION, get_latest_version_sync, is_newer
+import threading
+from tkinter import messagebox
+import requests
+import io
+import json
 
 class SettingsPanel(ctk.CTkFrame):
     def __init__(self, master, width=400, height=None, on_feature_toggle=None):
@@ -158,6 +164,13 @@ class SettingsPanel(ctk.CTkFrame):
             "ℹ️"
         )
         self._create_info_section()
+
+        # Contributors (below Info)
+        self.contributors_frame = self._create_section(
+            "Contributors",
+            "👥"
+        )
+        self._create_contributors_section()
         
     def _create_section(self, title, icon=""):
         frame = ctk.CTkFrame(
@@ -296,7 +309,7 @@ class SettingsPanel(ctk.CTkFrame):
         # Version
         self.version_label = ctk.CTkLabel(
             credits_container,
-            text=self.lang.get_text("settings.info.version", version="2.0.0"),
+            text=self.lang.get_text("settings.info.version", version=CURRENT_VERSION),
             font=ctk.CTkFont(size=12),
             text_color=("gray40", "gray80")
         )
@@ -313,7 +326,7 @@ class SettingsPanel(ctk.CTkFrame):
         
         # Buttons container
         buttons_frame = ctk.CTkFrame(credits_container, fg_color="transparent")
-        buttons_frame.pack(pady=(8, 10), fill="x")
+        buttons_frame.pack(pady=(8, 4), fill="x")
         
         # GitHub button with improved styling
         self.github_button = ctk.CTkButton(
@@ -330,20 +343,53 @@ class SettingsPanel(ctk.CTkFrame):
         )
         self.github_button.pack(side="left", padx=(20, 5))
         
-        # Ko-fi support button
-        self.kofi_button = ctk.CTkButton(
+        # Check updates button
+        self.check_updates_button = ctk.CTkButton(
             buttons_frame,
+            text="🔄 Check updates",
+            command=self.check_updates,
+            fg_color=("#2b6cb0", "#63b3ed"),
+            hover_color=("#2c5282", "#4299e1"),
+            text_color=("white", "black"),
+            width=140,
+            height=32,
+            font=ctk.CTkFont(size=12, weight="bold"),
+            corner_radius=8
+        )
+        self.check_updates_button.pack(side="left", padx=5)
+        
+        # Ko-fi support button placed below the row of buttons
+        self.kofi_button = ctk.CTkButton(
+            credits_container,
             text="💖 Ko-fi",
             command=self.open_kofi,
             fg_color=("#ff5f5f", "#ff3030"),
             hover_color=("#ff4040", "#ff1010"),
             text_color="white",
-            width=120,
+            width=140,
             height=32,
             font=ctk.CTkFont(size=12, weight="bold"),
             corner_radius=8
         )
-        self.kofi_button.pack(side="right", padx=(5, 20))
+        self.kofi_button.pack(pady=(6, 10), anchor="center")
+        
+    def _create_contributors_section(self):
+        # Brief description and button to open modal
+        desc = ctk.CTkLabel(
+            self.contributors_frame,
+            text="View project contributors",
+            font=ctk.CTkFont(size=12)
+        )
+        desc.pack(anchor="w", padx=6, pady=(2, 4))
+        self.contributors_button = ctk.CTkButton(
+            self.contributors_frame,
+            text="👥 View contributors",
+            command=self.open_contributors,
+            width=180,
+            height=30,
+            font=ctk.CTkFont(size=12, weight="bold")
+        )
+        self.contributors_button.pack(anchor="w", padx=6, pady=(0, 8))
         
     def change_appearance_mode(self, new_appearance_mode: str):
         """Convert the translated theme name into the actual value and apply it"""
@@ -441,7 +487,7 @@ class SettingsPanel(ctk.CTkFrame):
         
         # Update the version
         if hasattr(self, 'version_label'):
-            self.version_label.configure(text=lang.get_text("settings.info.version", version="2.0.0"))
+            self.version_label.configure(text=lang.get_text("settings.info.version", version=CURRENT_VERSION))
         
     def toggle_debug(self):
         is_debug = self.debug_switch.get()
@@ -487,6 +533,234 @@ class SettingsPanel(ctk.CTkFrame):
     def open_kofi(self):
         import webbrowser
         webbrowser.open("https://ko-fi.com/seregon")
+    
+    def open_contributors(self):
+        # Create modal window
+        top = ctk.CTkToplevel(self)
+        top.title("Contributors")
+        top.geometry("520x600")
+        top.grab_set()
+        mode = ctk.get_appearance_mode().lower()
+        top.configure(fg_color=Colors.get_color(Colors.SETTINGS_BG, mode))
+
+        header = ctk.CTkFrame(top, fg_color="transparent")
+        header.pack(fill="x", padx=12, pady=(12, 6))
+        title_lbl = ctk.CTkLabel(header, text="Contributors", font=ctk.CTkFont(size=16, weight="bold"))
+        title_lbl.pack(side="left")
+        close_btn = ctk.CTkButton(header, text="✖", width=36, height=32, command=top.destroy,
+                                  fg_color=Colors.get_color(Colors.BACKGROUND_LIGHT, mode),
+                                  text_color=Colors.get_color(Colors.TEXT, mode),
+                                  hover_color=Colors.get_color(Colors.SETTINGS_ITEM_BG, mode))
+        close_btn.pack(side="right")
+
+        body = ctk.CTkFrame(top, fg_color="transparent")
+        body.pack(fill="both", expand=True, padx=12, pady=6)
+        loading_lbl = ctk.CTkLabel(body, text="Loading contributors…")
+        loading_lbl.pack(pady=10)
+
+        # Keep refs
+        self._contributors_modal = top
+        self._contributors_container = body
+        self._contributors_photo_refs = []
+
+        # Try to load cached contributors and render immediately
+        cached = self._load_cached_contributors()
+        if cached:
+            try:
+                # Clear loading label and render cached
+                for child in list(self._contributors_container.winfo_children()):
+                    child.destroy()
+                self._render_contributors_list(cached)
+                # Show a subtle note
+                note = ctk.CTkLabel(self._contributors_container, text="Refreshing list…", text_color=Colors.get_color(Colors.TEXT_MUTED, mode))
+                note.pack(pady=(6, 0))
+            except Exception:
+                pass
+
+        # Start background fetch (will refresh UI and cache if newer)
+        threading.Thread(target=self._load_contributors_thread, daemon=True).start()
+
+    def _load_contributors_thread(self):
+        url = "https://api.github.com/repos/seregonwar/DiscordServerCloner/contributors?per_page=100&anon=false"
+        contributors = []
+        error = None
+        try:
+            resp = requests.get(url, timeout=8)
+            if resp.status_code == 200:
+                data = resp.json()
+                # Filter and sort by contributions desc
+                contributors = [
+                    {
+                        "login": c.get("login"),
+                        "html_url": c.get("html_url"),
+                        "avatar_url": c.get("avatar_url"),
+                        "contributions": int(c.get("contributions", 0))
+                    }
+                    for c in data if c.get("type") == "User"
+                ]
+                contributors.sort(key=lambda x: x["contributions"], reverse=True)
+            else:
+                error = f"GitHub API returned {resp.status_code}"
+        except Exception as e:
+            error = str(e)
+
+        def finish():
+            # Modal might have been closed
+            if not hasattr(self, "_contributors_modal") or not self._contributors_modal.winfo_exists():
+                return
+            if error:
+                # If there was an error but cache was shown, keep the cache; else show error
+                if not self._contributors_container.winfo_children():
+                    ctk.CTkLabel(self._contributors_container, text=f"Unable to load contributors: {error}").pack(pady=10)
+                return
+
+            # Save new list to cache and render
+            try:
+                self._save_cached_contributors(contributors)
+            except Exception:
+                pass
+
+            # Clear then render updated list
+            for child in list(self._contributors_container.winfo_children()):
+                child.destroy()
+            self._render_contributors_list(contributors)
+
+        self.after(0, finish)
+
+    def _render_contributors_list(self, contributors):
+        mode = ctk.get_appearance_mode().lower()
+        list_frame = ctk.CTkScrollableFrame(self._contributors_container, fg_color=Colors.get_color(Colors.BACKGROUND_LIGHT, mode))
+        list_frame.pack(fill="both", expand=True)
+        for c in contributors:
+            row = ctk.CTkFrame(list_frame, fg_color="transparent")
+            row.pack(fill="x", padx=6, pady=4)
+
+            # Avatar
+            photo = None
+            try:
+                if c.get("avatar_url"):
+                    img_resp = requests.get(c["avatar_url"], timeout=6)
+                    if img_resp.status_code == 200:
+                        image = Image.open(io.BytesIO(img_resp.content)).convert("RGBA")
+                        # Use CTkImage for proper HighDPI scaling
+                        photo = ctk.CTkImage(light_image=image, dark_image=image, size=(32, 32))
+                        self._contributors_photo_refs.append(photo)
+            except Exception:
+                photo = None
+
+            if photo:
+                ctk.CTkLabel(row, image=photo, text="").pack(side="left", padx=(4, 8))
+            else:
+                placeholder = ctk.CTkLabel(row, text="", width=32, height=32, fg_color=("#ddd", "#333"))
+                placeholder.pack(side="left", padx=(4, 8))
+
+            name = c.get("login") or "unknown"
+            contribs = c.get("contributions", 0)
+            btn = ctk.CTkButton(
+                row,
+                text=f"{name}  ({contribs})",
+                command=lambda url=c.get("html_url"): __import__("webbrowser").open(url),
+                height=30,
+                width=320,
+                fg_color=Colors.get_color(Colors.BUTTON_BG, mode),
+                hover_color=Colors.get_color(Colors.BUTTON_HOVER, mode),
+                text_color=Colors.get_color(Colors.TEXT, mode)
+            )
+            btn.pack(side="left", padx=4)
+
+    def _cache_file_path(self):
+        # Place cache under project logs directory
+        # settings_panel.py is src/interface/components/, go up 4 to project root
+        root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../"))
+        logs_dir = os.path.join(root, "logs")
+        try:
+            os.makedirs(logs_dir, exist_ok=True)
+        except Exception:
+            pass
+        return os.path.join(logs_dir, "contributors_cache.json")
+
+    def _load_cached_contributors(self):
+        try:
+            path = self._cache_file_path()
+            if os.path.exists(path):
+                with open(path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, list):
+                    # basic validation
+                    return [
+                        {
+                            "login": str(d.get("login")),
+                            "html_url": d.get("html_url"),
+                            "avatar_url": d.get("avatar_url"),
+                            "contributions": int(d.get("contributions", 0))
+                        }
+                        for d in data
+                    ]
+        except Exception:
+            return None
+        return None
+
+    def _save_cached_contributors(self, contributors):
+        try:
+            path = self._cache_file_path()
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(contributors, f)
+        except Exception:
+            pass
+        
+    def check_updates(self):
+        """Start background check for new releases."""
+        if hasattr(self, 'check_updates_button'):
+            try:
+                self.check_updates_button.configure(state="disabled", text="Checking…")
+            except Exception:
+                pass
+        threading.Thread(target=self._check_updates_thread, daemon=True).start()
+
+    def _check_updates_thread(self):
+        """Worker to check the latest GitHub release without blocking UI."""
+        try:
+            latest = get_latest_version_sync(timeout=6.0)
+        except Exception:
+            latest = None
+
+        def finish():
+            # Restore button
+            if hasattr(self, 'check_updates_button'):
+                try:
+                    self.check_updates_button.configure(state="normal", text="🔄 Check updates")
+                except Exception:
+                    pass
+
+            if not latest:
+                messagebox.showinfo("Updates", "Could not check for updates right now. Please try again later.")
+                return
+
+            if is_newer(latest, CURRENT_VERSION):
+                res = messagebox.askyesno(
+                    "Update available",
+                    f"A new version {latest} is available. You are on {CURRENT_VERSION}.\n\nOpen releases page?"
+                )
+                if res:
+                    import webbrowser
+                    webbrowser.open("https://github.com/seregonwar/DiscordServerCloner/releases")
+            else:
+                messagebox.showinfo("Up to date", f"You are on the latest version ({CURRENT_VERSION}).")
+
+        # Switch back to UI thread
+        self.after(0, finish)
+        
+    def toggle_advanced_explorer(self):
+        """Toggle advanced explorer feature"""
+        state = self.advanced_explorer_switch.get()
+        self.settings.set_setting("features", "advanced_explorer", state)
+        
+        # Notify main window about the change
+        try:
+            if self.on_feature_toggle:
+                self.on_feature_toggle("advanced_explorer", state)
+        except Exception:
+            pass
         
     def _get_translated_theme(self, theme: str) -> str:
         """Convert the theme name into the translated text"""
@@ -555,12 +829,6 @@ class SettingsPanel(ctk.CTkFrame):
             self.debug_description.configure(
                 text_color=Colors.get_color(Colors.TEXT, mode)
             )
-
-    def toggle_advanced_explorer(self):
-        """Toggle advanced explorer feature"""
-        state = self.advanced_explorer_switch.get()
-        self.settings.set_setting("features", "advanced_explorer", state)
-        
         # Notify main window about the change
         try:
             if self.on_feature_toggle:
