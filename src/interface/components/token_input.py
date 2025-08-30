@@ -19,7 +19,7 @@ class TokenInput(ctk.CTkFrame):
         # Main frame
         self.main_frame = ctk.CTkFrame(self)
         self.main_frame.pack(fill="x", padx=20)
-        
+
         # Label
         self.label = ctk.CTkLabel(
             self.main_frame,
@@ -52,7 +52,19 @@ class TokenInput(ctk.CTkFrame):
             hover_color=Colors.get_color(Colors.TEXT_MUTED, ctk.get_appearance_mode().lower())
         )
         self.show_button.pack(side="left", padx=(10, 0))
-        
+        # Delete button (clear token)
+        self.delete_token_button = ctk.CTkButton(
+            self.input_frame,
+            text="❌",
+            width=30,
+            command=self.clear_token,
+            fg_color=Colors.get_color(Colors.TEXT, ctk.get_appearance_mode().lower()),
+            text_color=Colors.get_color(Colors.BACKGROUND, ctk.get_appearance_mode().lower()),
+            hover_color=Colors.get_color(Colors.TEXT_MUTED, ctk.get_appearance_mode().lower())
+        )
+        self.delete_token_button.pack(side="right", padx=(10, 0))
+
+
         # Verify button per testare il token e recuperare i server
         self.verify_button = ctk.CTkButton(
             self.input_frame,
@@ -158,7 +170,8 @@ class TokenInput(ctk.CTkFrame):
         if self.tooltip:
             self.tooltip.destroy()
             self.tooltip = None
-            
+    def clear_token(self):
+        self.entry.delete(0, "end")        
     def toggle_show_hide(self):
         if self.entry.cget("show") == "•":
             self.entry.configure(show="")

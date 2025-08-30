@@ -422,7 +422,7 @@ class Clone:
                 payload = {
                     "name": role.get('name'),
                     "permissions": role.get('permissions'),
-                    "color": role.get('colour'),
+                    "color": role.get('color'),
                     "hoist": role.get('hoist'),
                     "mentionable": role.get('mentionable')
                 }
