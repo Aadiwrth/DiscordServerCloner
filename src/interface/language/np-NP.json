@@ -32,6 +32,11 @@
             "show_timing": "Execution time dekhaunu hos",
             "show_api": "API details dekhaunu hos"
         },
+        "features": {
+            "title": "सुविधाहरू",
+            "advanced_explorer": "उन्नत मोड",
+            "advanced_mode_description": "च्यानलहरू नेभिगेट गर्न र पूर्ण सामग्री हेर्न प्रत्यक्ष सर्भर पहुँच सक्षम गर्नुहोस्"
+        },
         "info": {
             "title": "Information",
             "version": "Version: {version}"
@@ -78,7 +83,14 @@
             "stats_errors": "Detected errors:",
             "stats_time": "Elapsed time:",
             "error_same_ids": "Source ra destination server same hunu sakdaina",
-            "error_invalid_id": "Server IDs number hunu parcha"
+            "error_invalid_id": "Server IDs number hunu parcha",
+            "advanced_explorer_button": "Advanced Explorer",
+            "explorer_title": "Explorer - {name}",
+            "channel_details": "Channel Details",
+            "channels_no_category": "Koi category chaina",
+            "view_messages": "Messages herne",
+            "hide_messages": "Messages lukaaune",
+            "select_guild": "Server select garne"
         }
     },
     "status": {
@@ -91,7 +103,41 @@
         "connection_error": "Connection error: {error}",
         "guilds_loaded": "{count} servers loaded",
         "source_selected": "Source server selected: {name}",
-        "destination_selected": "Destination server selected: {name}"
+        "destination_selected": "Destination server selected: {name}",
+        "advanced_mode_enabled": "उन्नत मोड सक्षम गरियो",
+        "advanced_mode_disabled": "उन्नत मोड असक्षम गरियो",
+        "advanced_mode_auto_opened": "स्टार्टअपमा उन्नत मोड स्वचालित रूपमा खोलियो"
+    },
+    "advanced_explorer": {
+        "title": "उन्नत एक्सप्लोरर",
+        "server_info": "सर्भर जानकारी",
+        "channels": "च्यानलहरू",
+        "messages": "सन्देशहरू",
+        "loading": "लोड हुँदै...",
+        "no_messages": "कुनै सन्देश फेला परेन",
+        "message_details": "सन्देश विवरण",
+        "attachments": "संलग्नकहरू",
+        "embeds": "एम्बेडहरू",
+        "reactions": "प्रतिक्रियाहरू",
+        "author": "लेखक",
+        "timestamp": "समय छाप",
+        "content": "सामग्री",
+        "voice_message": "आवाज सन्देश",
+        "image": "छवि",
+        "video": "भिडियो",
+        "file": "फाइल",
+        "download": "डाउनलोड",
+        "play": "खेल्नुहोस्",
+        "pause": "रोक्नुहोस्",
+        "view_full": "पूर्ण हेर्नुहोस्",
+        "copy_link": "लिङ्क प्रतिलिपि गर्नुहोस्",
+        "message_count": "{count} सन्देशहरू",
+        "load_more": "थप लोड गर्नुहोस्",
+        "search_placeholder": "सन्देशहरू खोज्नुहोस्...",
+        "filter_by_user": "प्रयोगकर्ता द्वारा फिल्टर गर्नुहोस्",
+        "filter_by_date": "मिति द्वारा फिल्टर गर्नुहोस्",
+        "export_messages": "सन्देशहरू निर्यात गर्नुहोस्",
+        "refresh": "ताजा गर्नुहोस्"
     },
     "debug_window": {
         "title": "Debug Console",

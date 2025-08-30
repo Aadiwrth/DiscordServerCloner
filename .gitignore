@@ -7,3 +7,4 @@ __pycache__/
 
 # Config (local settings)
 src/interface/config/
+logs/debug_log_20250830_191531.txt

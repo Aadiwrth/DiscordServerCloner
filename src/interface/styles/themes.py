@@ -55,12 +55,12 @@ class ModernTheme:
 
 def apply_theme(window):
     ModernTheme.configure_styles()
-    window.configure(bg=Colors.BACKGROUND)
+    window.configure(bg=Colors.get_color(Colors.BACKGROUND))
     
     # Apply the dark theme to the window
     window.tk_setPalette(
-        background=Colors.BACKGROUND,
-        foreground=Colors.TEXT,
-        activeBackground=Colors.PRIMARY_DARK,
-        activeForeground=Colors.TEXT
+        background=Colors.get_color(Colors.BACKGROUND),
+        foreground=Colors.get_color(Colors.TEXT),
+        activeBackground=Colors.get_color(Colors.PRIMARY_DARK),
+        activeForeground=Colors.get_color(Colors.TEXT)
     )

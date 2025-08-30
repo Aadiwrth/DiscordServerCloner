@@ -24,6 +24,11 @@
                 "np-NP": "Nepali"
             }
         },
+        "features": {
+            "title": "Funzionalità",
+            "advanced_explorer": "Modalità Avanzata",
+            "advanced_mode_description": "Abilita l'accesso diretto ai server per navigare canali e visualizzare contenuti completi"
+        },
         "debug": {
             "title": "Debug",
             "description": "La modalità debug mostra:\n• Log dettagliati\n• Tempi di esecuzione\n• Errori specifici\n• Statistiche clonazione",
@@ -78,7 +83,14 @@
             "stats_errors": "Errori rilevati:",
             "stats_time": "Tempo trascorso:",
             "error_same_ids": "I server sorgente e destinazione non possono essere uguali",
-            "error_invalid_id": "Gli ID server devono essere numeri"
+            "error_invalid_id": "Gli ID server devono essere numeri",
+            "advanced_explorer_button": "Esploratore Avanzato",
+            "explorer_title": "Esploratore - {name}",
+            "channel_details": "Dettagli Canale",
+            "channels_no_category": "Senza categoria",
+            "view_messages": "Visualizza messaggi",
+            "hide_messages": "Nascondi messaggi",
+            "select_guild": "Seleziona Server"
         }
     },
     "status": {
@@ -91,7 +103,41 @@
         "connection_error": "Errore di connessione: {error}",
         "guilds_loaded": "Caricati {count} server",
         "source_selected": "Server sorgente selezionato: {name}",
-        "destination_selected": "Server destinazione selezionato: {name}"
+        "destination_selected": "Server destinazione selezionato: {name}",
+        "advanced_mode_enabled": "Modalità avanzata attivata",
+        "advanced_mode_disabled": "Modalità avanzata disattivata",
+        "advanced_mode_auto_opened": "Modalità avanzata aperta automaticamente all'avvio"
+    },
+    "advanced_explorer": {
+        "title": "Esploratore Avanzato",
+        "server_info": "Informazioni Server",
+        "channels": "Canali",
+        "messages": "Messaggi",
+        "loading": "Caricamento...",
+        "no_messages": "Nessun messaggio trovato",
+        "message_details": "Dettagli Messaggio",
+        "attachments": "Allegati",
+        "embeds": "Embed",
+        "reactions": "Reazioni",
+        "author": "Autore",
+        "timestamp": "Data e Ora",
+        "content": "Contenuto",
+        "voice_message": "Messaggio Vocale",
+        "image": "Immagine",
+        "video": "Video",
+        "file": "File",
+        "download": "Scarica",
+        "play": "Riproduci",
+        "pause": "Pausa",
+        "view_full": "Visualizza Completo",
+        "copy_link": "Copia Link",
+        "message_count": "{count} messaggi",
+        "load_more": "Carica Altri",
+        "search_placeholder": "Cerca messaggi...",
+        "filter_by_user": "Filtra per utente",
+        "filter_by_date": "Filtra per data",
+        "export_messages": "Esporta Messaggi",
+        "refresh": "Aggiorna"
     },
     "debug_window": {
         "title": "Console Debug",
@@ -146,4 +192,4 @@
             "file_disabled": "Logging su file disattivato"
         }
     }
-} 
+}

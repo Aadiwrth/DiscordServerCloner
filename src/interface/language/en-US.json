@@ -24,6 +24,11 @@
                 "np-NP": "Nepali"
             }
         },
+        "features": {
+            "title": "Features",
+            "advanced_explorer": "Advanced Mode",
+            "advanced_mode_description": "Enable direct server access to navigate channels and view complete content"
+        },
         "debug": {
             "title": "Debug",
             "description": "Debug mode shows:\n• Detailed logs\n• Execution times\n• Specific errors\n• Cloning statistics",
@@ -78,7 +83,14 @@
             "stats_errors": "Errors detected:",
             "stats_time": "Elapsed time:",
             "error_same_ids": "Source and destination servers cannot be the same",
-            "error_invalid_id": "Server IDs must be numbers"
+            "error_invalid_id": "Server IDs must be numbers",
+            "advanced_explorer_button": "Advanced Explorer",
+            "explorer_title": "Explorer - {name}",
+            "channel_details": "Channel Details",
+            "channels_no_category": "No category",
+            "view_messages": "View messages",
+            "hide_messages": "Hide messages",
+            "select_guild": "Select Server"
         }
     },
     "status": {
@@ -91,7 +103,41 @@
         "connection_error": "Connection error: {error}",
         "guilds_loaded": "Loaded {count} servers",
         "source_selected": "Source server selected: {name}",
-        "destination_selected": "Destination server selected: {name}"
+        "destination_selected": "Destination server selected: {name}",
+        "advanced_mode_enabled": "Advanced mode enabled",
+        "advanced_mode_disabled": "Advanced mode disabled",
+        "advanced_mode_auto_opened": "Advanced mode automatically opened at startup"
+    },
+    "advanced_explorer": {
+        "title": "Advanced Explorer",
+        "server_info": "Server Information",
+        "channels": "Channels",
+        "messages": "Messages",
+        "loading": "Loading...",
+        "no_messages": "No messages found",
+        "message_details": "Message Details",
+        "attachments": "Attachments",
+        "embeds": "Embeds",
+        "reactions": "Reactions",
+        "author": "Author",
+        "timestamp": "Timestamp",
+        "content": "Content",
+        "voice_message": "Voice Message",
+        "image": "Image",
+        "video": "Video",
+        "file": "File",
+        "download": "Download",
+        "play": "Play",
+        "pause": "Pause",
+        "view_full": "View Full",
+        "copy_link": "Copy Link",
+        "message_count": "{count} messages",
+        "load_more": "Load More",
+        "search_placeholder": "Search messages...",
+        "filter_by_user": "Filter by user",
+        "filter_by_date": "Filter by date",
+        "export_messages": "Export Messages",
+        "refresh": "Refresh"
     },
     "debug_window": {
         "title": "Debug Console",
@@ -146,4 +192,4 @@
             "file_disabled": "File logging disabled"
         }
     }
-} 
+}

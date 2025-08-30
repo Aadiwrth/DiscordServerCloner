@@ -32,6 +32,11 @@
             "show_timing": "Mostrar tiempos de ejecución",
             "show_api": "Mostrar detalles de API"
         },
+        "features": {
+            "title": "Características",
+            "advanced_explorer": "Modo Avanzado",
+            "advanced_mode_description": "Habilita el acceso directo a servidores para navegar canales y ver contenido completo"
+        },
         "info": {
             "title": "Información",
             "version": "Versión: {version}"
@@ -78,7 +83,14 @@
             "stats_errors": "Errores detectados:",
             "stats_time": "Tiempo transcurrido:",
             "error_same_ids": "Los servidores origen y destino no pueden ser iguales",
-            "error_invalid_id": "Los ID de servidor deben ser números"
+            "error_invalid_id": "Los IDs de servidor deben ser números",
+            "advanced_explorer_button": "Explorador Avanzado",
+            "explorer_title": "Explorador - {name}",
+            "channel_details": "Detalles del Canal",
+            "channels_no_category": "Sin categoría",
+            "view_messages": "Ver mensajes",
+            "hide_messages": "Ocultar mensajes",
+            "select_guild": "Seleccionar Servidor"
         }
     },
     "status": {
@@ -91,7 +103,41 @@
         "connection_error": "Error de conexión: {error}",
         "guilds_loaded": "Cargados {count} servidores",
         "source_selected": "Servidor origen seleccionado: {name}",
-        "destination_selected": "Servidor destino seleccionado: {name}"
+        "destination_selected": "Servidor destino seleccionado: {name}",
+        "advanced_mode_enabled": "Modo avanzado activado",
+        "advanced_mode_disabled": "Modo avanzado desactivado",
+        "advanced_mode_auto_opened": "Modo avanzado abierto automáticamente al inicio"
+    },
+    "advanced_explorer": {
+        "title": "Explorador Avanzado",
+        "server_info": "Información del Servidor",
+        "channels": "Canales",
+        "messages": "Mensajes",
+        "loading": "Cargando...",
+        "no_messages": "No se encontraron mensajes",
+        "message_details": "Detalles del Mensaje",
+        "attachments": "Archivos Adjuntos",
+        "embeds": "Incrustaciones",
+        "reactions": "Reacciones",
+        "author": "Autor",
+        "timestamp": "Marca de Tiempo",
+        "content": "Contenido",
+        "voice_message": "Mensaje de Voz",
+        "image": "Imagen",
+        "video": "Video",
+        "file": "Archivo",
+        "download": "Descargar",
+        "play": "Reproducir",
+        "pause": "Pausar",
+        "view_full": "Ver Completo",
+        "copy_link": "Copiar Enlace",
+        "message_count": "{count} mensajes",
+        "load_more": "Cargar Más",
+        "search_placeholder": "Buscar mensajes...",
+        "filter_by_user": "Filtrar por usuario",
+        "filter_by_date": "Filtrar por fecha",
+        "export_messages": "Exportar Mensajes",
+        "refresh": "Actualizar"
     },
     "debug_window": {
         "title": "Consola Debug",
@@ -146,4 +192,4 @@
             "file_disabled": "Registro en archivo desactivado"
         }
     }
-} 
+}

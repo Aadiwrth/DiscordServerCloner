@@ -11,6 +11,9 @@ class SettingsManager:
         "language": {
             "current": "en-US"  # Default language
         },
+        "features": {
+            "advanced_explorer": True  # Enable Advanced Explorer by default
+        },
         "debug": {
             "enabled": False,
             "save_logs": False,

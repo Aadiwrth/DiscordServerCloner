@@ -4,6 +4,7 @@ import sys
 from typing import Dict
 
 class LanguageManager:
+
     _instance = None
     _current_language = "en-US"
     _translations: Dict = {}
@@ -43,8 +44,13 @@ class LanguageManager:
                     file_path = os.path.join(language_dir, filename)
                     try:
                         with open(file_path, 'r', encoding='utf-8') as f:
-                            self._translations[lang_code] = json.load(f)
-                            print(f"Loaded language file: {filename}")
+                            data = json.load(f)
+                            # Basic schema validation: ensure it's a dict and has minimal keys
+                            if isinstance(data, dict):
+                                self._translations[lang_code] = data
+                                print(f"Loaded language file: {filename}")
+                            else:
+                                print(f"Invalid language file (not a dict): {filename}")
                     except Exception as e:
                         print(f"Error loading language file {filename}: {e}")
         else:
@@ -81,23 +87,28 @@ class LanguageManager:
             except (KeyError, AttributeError):
                 return key
     
-    def set_language(self, lang_code: str) -> bool:
+    def set_language(self, lang_identifier: str) -> bool:
         """
-        Change current language and notify observers
+        Change current language and notify observers.
+        Accepts either a language code (e.g., 'it-IT') or the display name as
+        defined in each language file under settings.language.languages.<code>.
         """
-        # Convert language name to correct code
-        lang_map = {
-            "English": "en-US",
-            "Italiano": "it-IT",
-            "Español": "es-ES",
-            "Français": "fr-FR",
-            "Nepali": "np-NP"
-        }
-        
-        lang_code = lang_map.get(lang_code, lang_code)
-        
-        if lang_code in self._translations:
-            self._current_language = lang_code
+        code = None
+        # Direct match by code
+        if lang_identifier in self._translations:
+            code = lang_identifier
+        else:
+            # Try resolve by display name
+            for lang_code in self._translations.keys():
+                try:
+                    display_name = self._translations[lang_code]["settings"]["language"]["languages"][lang_code]
+                    if display_name == lang_identifier:
+                        code = lang_code
+                        break
+                except Exception:
+                    continue
+        if code and code in self._translations:
+            self._current_language = code
             self._notify_observers()
             return True
         return False
@@ -147,3 +158,15 @@ class LanguageManager:
     @property
     def current_language(self):
         return self._current_language
+
+    def reload_languages(self):
+        """Reload language files from disk and keep current selection if possible."""
+        current = self._current_language
+        self._load_translations()
+        # Restore current language if still available; otherwise fallback to first available
+        if current in self._translations:
+            self._current_language = current
+        else:
+            # Pick English if present, else any available
+            self._current_language = "en-US" if "en-US" in self._translations else next(iter(self._translations.keys()))
+        self._notify_observers()

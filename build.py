@@ -13,7 +13,7 @@ import platform
 
 # Configuration
 APP_NAME = "Discord Server Cloner"
-APP_VERSION = "1.0.0"
+APP_VERSION = "2.0.0"
 MAIN_SCRIPT = "main.py"
 OUTPUT_DIR = "dist"
 BUILD_DIR = "build"

@@ -16,6 +16,8 @@ from PIL import Image, ImageTk
 from src.interface.styles.colors import Colors
 from src.operation_file.serverclone import Clone
 from src.interface.utils.language_manager import LanguageManager
+from src.interface.utils.settings_manager import SettingsManager
+
 
 # Define a custom exception for request errors
 class RequestsError(Exception):
@@ -28,6 +30,11 @@ class GuildInput(ctk.CTkFrame):
         
         # Get language manager
         self.lang = LanguageManager()
+        self.settings = SettingsManager()
+        
+        # Initialize advanced explorer setting cache
+        adv_flag = self.settings.get_setting("features", "advanced_explorer")
+        self._advanced_explorer_enabled = True if adv_flag is None else bool(adv_flag)
         
         # Main frame
         self.main_frame = ctk.CTkFrame(self)
@@ -45,20 +52,17 @@ class GuildInput(ctk.CTkFrame):
         self.source_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         self.source_frame.pack(fill="x", pady=(0, 10))
         
-        # Dropdown per source (inizialmente vuoto)
-        self.source_dropdown = ctk.CTkOptionMenu(
+        # Selettore sorgente: pulsante che apre la ricerca
+        self.source_select_btn = ctk.CTkButton(
             self.source_frame,
-            values=[""],
-            command=self.source_selected,
-            dynamic_resizing=False,
+            text=self.lang.get_text("input.guild.dropdown_placeholder"),
             height=40,
-            width=350
+            command=lambda: self.open_guild_selector(is_source=True),
+            fg_color=Colors.get_color(Colors.BACKGROUND_LIGHT, ctk.get_appearance_mode().lower()),
+            text_color=Colors.get_color(Colors.TEXT, ctk.get_appearance_mode().lower()),
+            hover_color=Colors.get_color(Colors.SETTINGS_BG, ctk.get_appearance_mode().lower())
         )
-        self.source_dropdown.pack(side="left", fill="x", expand=True)
-        self.source_dropdown.set(self.lang.get_text("input.guild.dropdown_placeholder"))
-        
-        # Configurazione del menu contestuale (tasto destro) sul dropdown source
-        self._setup_context_menu(self.source_dropdown, is_source=True)
+        self.source_select_btn.pack(side="left", fill="x", expand=True)
         
         # Entry per inserimento manuale ID source, inizialmente nascosto
         self.source_entry = ctk.CTkEntry(
@@ -94,20 +98,17 @@ class GuildInput(ctk.CTkFrame):
         self.dest_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         self.dest_frame.pack(fill="x", pady=(0, 20))
         
-        # Dropdown per destination (inizialmente vuoto)
-        self.dest_dropdown = ctk.CTkOptionMenu(
+        # Selettore destinazione: pulsante che apre la ricerca
+        self.dest_select_btn = ctk.CTkButton(
             self.dest_frame,
-            values=[""],
-            command=self.dest_selected,
-            dynamic_resizing=False,
+            text=self.lang.get_text("input.guild.dropdown_placeholder"),
             height=40,
-            width=300
+            command=lambda: self.open_guild_selector(is_source=False),
+            fg_color=Colors.get_color(Colors.BACKGROUND_LIGHT, ctk.get_appearance_mode().lower()),
+            text_color=Colors.get_color(Colors.TEXT, ctk.get_appearance_mode().lower()),
+            hover_color=Colors.get_color(Colors.SETTINGS_BG, ctk.get_appearance_mode().lower())
         )
-        self.dest_dropdown.pack(side="left", fill="x", expand=True)
-        self.dest_dropdown.set(self.lang.get_text("input.guild.dropdown_placeholder"))
-        
-        # Configurazione del menu contestuale (tasto destro) sul dropdown destination
-        self._setup_context_menu(self.dest_dropdown, is_source=False)
+        self.dest_select_btn.pack(side="left", fill="x", expand=True)
         
         # Entry per inserimento manuale ID destination, inizialmente nascosto
         self.dest_entry = ctk.CTkEntry(
@@ -143,12 +144,16 @@ class GuildInput(ctk.CTkFrame):
         )
         self.dest_toggle.pack(side="left", padx=(10, 0))
         
+        # Selezioni correnti e flag input
+        self.selected_source_display = None
+        self.selected_dest_display = None
         # Flag per tenere traccia dell'input attivo
         self.source_manual_input = False
         self.dest_manual_input = False
         
         # Memorizziamo i server recuperati
         self.guilds_dict = {}  # Dizionario id -> details
+        self.guild_display_names = []  # Lista dei nomi visualizzati (name (id))
         
         # Controlli avanzati
         self.controls_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
@@ -411,20 +416,29 @@ class GuildInput(ctk.CTkFrame):
         elif not show and self.progress.winfo_ismapped():
             self.progress.pack_forget()
         self.progress.set(value)
+    
+    def update_advanced_explorer_visibility(self, enabled):
+        """Update the visibility of advanced explorer buttons based on settings"""
+        # Store the current setting for future modal creations
+        self._advanced_explorer_enabled = enabled
+        
+        # If there are any open guild selector modals, we would need to update them
+        # For now, the setting will take effect the next time a modal is opened
+        # This is acceptable since the modal is typically short-lived
         
     def toggle_source_input(self):
         """Passa dall'input da dropdown all'input manuale e viceversa"""
         self.source_manual_input = not self.source_manual_input
         
         if self.source_manual_input:
-            # Nascondiamo il dropdown e mostriamo l'input manuale
-            self.source_dropdown.pack_forget()
+            # Nascondiamo il selettore e mostriamo l'input manuale
+            self.source_select_btn.pack_forget()
             self.source_entry.pack(side="left", fill="x", expand=True)
             self.source_toggle.configure(text="📋")
         else:
-            # Nascondiamo l'input manuale e mostriamo il dropdown
+            # Nascondiamo l'input manuale e mostriamo il selettore
             self.source_entry.pack_forget()
-            self.source_dropdown.pack(side="left", fill="x", expand=True)
+            self.source_select_btn.pack(side="left", fill="x", expand=True)
             self.source_toggle.configure(text="⌨️")
             
     def toggle_dest_input(self):
@@ -432,20 +446,22 @@ class GuildInput(ctk.CTkFrame):
         self.dest_manual_input = not self.dest_manual_input
         
         if self.dest_manual_input:
-            # Nascondiamo il dropdown e mostriamo l'input manuale
-            self.dest_dropdown.pack_forget()
+            # Nascondiamo il selettore e mostriamo l'input manuale
+            self.dest_select_btn.pack_forget()
             self.dest_entry.pack(side="left", fill="x", expand=True)
             self.dest_toggle.configure(text="📋")
         else:
-            # Nascondiamo l'input manuale e mostriamo il dropdown
+            # Nascondiamo l'input manuale e mostriamo il selettore
             self.dest_entry.pack_forget()
-            self.dest_dropdown.pack(side="left", fill="x", expand=True)
+            self.dest_select_btn.pack(side="left", fill="x", expand=True)
             self.dest_toggle.configure(text="⌨️")
 
     def source_selected(self, option):
         """Callback quando un server sorgente viene selezionato"""
         # Se è stato selezionato un vero server (non il placeholder)
         if option in self.guilds_dict:
+            self.selected_source_display = option
+            self.source_select_btn.configure(text=option)
             # Aggiorniamo lo stato
             main_window = self.winfo_toplevel()
             main_window.status_bar.update_status(
@@ -457,6 +473,8 @@ class GuildInput(ctk.CTkFrame):
         """Callback quando un server destinazione viene selezionato"""
         # Se è stato selezionato un vero server (non il placeholder)
         if option in self.guilds_dict:
+            self.selected_dest_display = option
+            self.dest_select_btn.configure(text=option)
             # Aggiorniamo lo stato
             main_window = self.winfo_toplevel()
             main_window.status_bar.update_status(
@@ -472,6 +490,7 @@ class GuildInput(ctk.CTkFrame):
         # Resettiamo i dizionari e le liste
         self.guilds_dict = {}
         server_names = [self.lang.get_text("input.guild.dropdown_placeholder")]
+        self.guild_display_names = []
         
         # Popoliamo il dizionario e la lista dei nomi
         for guild in guilds_list:
@@ -481,19 +500,14 @@ class GuildInput(ctk.CTkFrame):
             
             self.guilds_dict[display_name] = guild
             server_names.append(display_name)
+            self.guild_display_names.append(display_name)
         
-        # Aggiorniamo i dropdown
-        self.source_dropdown.configure(values=server_names)
-        self.source_dropdown.set(server_names[0])
-        
-        self.dest_dropdown.configure(values=server_names)
-        self.dest_dropdown.set(server_names[0])
-        
-        # Assicuriamoci che i dropdown siano visibili
-        if self.source_manual_input:
-            self.toggle_source_input()
-        if self.dest_manual_input:
-            self.toggle_dest_input()
+        # Reset testo dei selettori se non è già stata fatta una scelta
+        placeholder = server_names[0]
+        if not self.selected_source_display:
+            self.source_select_btn.configure(text=placeholder)
+        if not self.selected_dest_display:
+            self.dest_select_btn.configure(text=placeholder)
             
         # Aggiorniamo lo stato
         main_window = self.winfo_toplevel()
@@ -502,12 +516,216 @@ class GuildInput(ctk.CTkFrame):
             "green"
         )
 
+    def open_guild_selector(self, is_source: bool):
+        """Apre una finestra con barra di ricerca per selezionare un server."""
+        # Costruzione finestra modale
+        top = ctk.CTkToplevel(self)
+        top.title(self.lang.get_text("input.guild.search_title") if hasattr(self.lang, 'get_text') else "Seleziona Server")
+        top.geometry("560x560")
+        top.grab_set()
+        
+        mode = ctk.get_appearance_mode().lower()
+        top.configure(fg_color=Colors.get_color(Colors.SETTINGS_BG, mode))
+        
+        # Header con titolo e pulsante chiudi
+        header = ctk.CTkFrame(top, fg_color="transparent")
+        header.pack(fill="x", padx=12, pady=(12, 8))
+        title_lbl = ctk.CTkLabel(
+            header,
+            text=self.lang.get_text("input.guild.search_title") if hasattr(self.lang, 'get_text') else "Seleziona Server",
+            font=ctk.CTkFont(size=16, weight="bold")
+        )
+        title_lbl.pack(side="left")
+        close_btn = ctk.CTkButton(
+            header,
+            text="✖",
+            width=36,
+            height=32,
+            command=top.destroy,
+            fg_color=Colors.get_color(Colors.BACKGROUND_LIGHT, mode),
+            text_color=Colors.get_color(Colors.TEXT, mode),
+            hover_color=Colors.get_color(Colors.SETTINGS_ITEM_BG, mode)
+        )
+        close_btn.pack(side="right")
+
+        # Barra ricerca con pulsante clear
+        search_row = ctk.CTkFrame(top, fg_color="transparent")
+        search_row.pack(fill="x", padx=12, pady=(0, 8))
+        search_var = tk.StringVar()
+        search_entry = ctk.CTkEntry(
+            search_row,
+            textvariable=search_var,
+            height=38,
+            placeholder_text=self.lang.get_text("input.guild.search_placeholder") if hasattr(self.lang, 'get_text') else "Cerca server...",
+        )
+        search_entry.pack(side="left", fill="x", expand=True)
+        clear_btn = ctk.CTkButton(
+            search_row,
+            text="🧹",
+            width=44,
+            height=36,
+            command=lambda: (search_var.set(""), on_key_release()),
+            fg_color=Colors.get_color(Colors.BACKGROUND_LIGHT, mode),
+            text_color=Colors.get_color(Colors.TEXT, mode),
+            hover_color=Colors.get_color(Colors.SETTINGS_ITEM_BG, mode)
+        )
+        clear_btn.pack(side="left", padx=(8, 0))
+        
+        # Contenitore scrollabile per l'elenco
+        list_frame = ctk.CTkScrollableFrame(top, fg_color=Colors.get_color(Colors.BACKGROUND_LIGHT, mode))
+        list_frame.pack(fill="both", expand=True, padx=12, pady=(0, 8))
+
+        # Footer con conteggio risultati e tasto Explorer avanzato (se abilitato)
+        footer = ctk.CTkFrame(top, fg_color="transparent")
+        footer.pack(fill="x", padx=12, pady=(0, 12))
+        count_lbl = ctk.CTkLabel(footer, text="")
+        count_lbl.pack(side="left")
+        # Check if we have a cached setting from update_advanced_explorer_visibility
+        if hasattr(self, '_advanced_explorer_enabled'):
+            adv_enabled = self._advanced_explorer_enabled
+        else:
+            # Fallback to reading from settings
+            adv_flag = self.settings.get_setting("features", "advanced_explorer")
+            adv_enabled = True if adv_flag is None else bool(adv_flag)
+        if adv_enabled:
+            explorer_btn = ctk.CTkButton(
+                footer,
+                text=self.lang.get_text("input.guild.advanced_explorer_button") if hasattr(self.lang, 'get_text') else "Explorer avanzato",
+                width=180,
+                command=lambda: open_advanced_for_current(),
+                fg_color=Colors.get_color(Colors.BUTTON_BG, mode),
+                text_color=Colors.get_color(Colors.TEXT, mode),
+                hover_color=Colors.get_color(Colors.BUTTON_HOVER, mode)
+            )
+            explorer_btn.pack(side="right")
+        
+        # Stato per debounce
+        self._search_after_id = None
+        selected_index = tk.IntVar(value=0)
+        current_items = []
+        item_buttons = []
+
+        def highlight_selection():
+            for idx, btn in enumerate(item_buttons):
+                if idx == selected_index.get():
+                    btn.configure(fg_color=Colors.get_color(Colors.TEXT, mode), text_color=Colors.get_color(Colors.BACKGROUND, mode))
+                else:
+                    btn.configure(fg_color=Colors.get_color(Colors.SETTINGS_ITEM_BG, mode), text_color=Colors.get_color(Colors.TEXT, mode))
+        
+        def populate(items):
+            # Pulisci
+            for w in list_frame.winfo_children():
+                w.destroy()
+            item_buttons.clear()
+            current_items.clear()
+            # Aggiungi voci
+            for name in items:
+                btn = ctk.CTkButton(
+                    list_frame,
+                    text=name,
+                    anchor="w",
+                    height=36,
+                    fg_color=Colors.get_color(Colors.SETTINGS_ITEM_BG, mode),
+                    text_color=Colors.get_color(Colors.TEXT, mode),
+                    hover_color=Colors.get_color(Colors.SETTINGS_BG, mode),
+                    command=lambda n=name: select_and_close(n)
+                )
+                btn.pack(fill="x", padx=6, pady=4)
+                item_buttons.append(btn)
+                current_items.append(name)
+            # Aggiorna conteggio e selezione
+            count_lbl.configure(text=f"{len(items)}")
+            if items:
+                selected_index.set(0)
+                highlight_selection()
+        
+        def select_and_close(name):
+            # Imposta il valore sul selettore corretto e invoca callback
+            if name in self.guilds_dict:
+                if is_source:
+                    self.source_selected(name)
+                else:
+                    self.dest_selected(name)
+            top.destroy()
+
+        def open_advanced_for_current():
+            # Apre l'explorer per l'elemento correntemente selezionato
+            if not current_items:
+                return
+            display = current_items[selected_index.get()]
+            if display in self.guilds_dict:
+                guild_obj = self.guilds_dict[display]
+                # Chiudi il selettore prima di aprire l'explorer per evitare doppi modali
+                try:
+                    top.destroy()
+                except Exception:
+                    pass
+                def on_select(display_name: str):
+                    if is_source:
+                        self.source_selected(display_name)
+                    else:
+                        self.dest_selected(display_name)
+                # Use embedded explorer within the main window
+                main_window = self.winfo_toplevel()
+                if hasattr(main_window, 'show_advanced_explorer'):
+                    try:
+                        main_window.show_advanced_explorer(guild_obj, is_source, on_select)
+                    except Exception as e:
+                        try:
+                            messagebox.showerror("Advanced Explorer", str(e))
+                        except Exception:
+                            pass
+        
+        def on_key_release(_event=None):
+            # Debounce
+            if self._search_after_id is not None:
+                try:
+                    search_entry.after_cancel(self._search_after_id)
+                except Exception:
+                    pass
+            def do_filter():
+                q = search_var.get().strip().lower()
+                if not q:
+                    items = self.guild_display_names
+                else:
+                    items = [n for n in self.guild_display_names if q in n.lower()]
+                populate(items)
+            self._search_after_id = search_entry.after(150, do_filter)
+        
+        def on_key_nav(event):
+            if not current_items:
+                return
+            key = event.keysym
+            idx = selected_index.get()
+            if key in ("Down", "KP_Down"):
+                idx = (idx + 1) % len(current_items)
+                selected_index.set(idx)
+                highlight_selection()
+            elif key in ("Up", "KP_Up"):
+                idx = (idx - 1) % len(current_items)
+                selected_index.set(idx)
+                highlight_selection()
+            elif key in ("Return", "KP_Enter"):
+                select_and_close(current_items[selected_index.get()])
+            elif key == "Escape":
+                top.destroy()
+
+        search_entry.bind("<KeyRelease>", on_key_release)
+        top.bind("<Key>", on_key_nav)
+        
+        # Popola inizialmente
+        populate(self.guild_display_names)
+        search_entry.focus_set()
+
+
     def reset_fields(self):
         """Cancella i campi di input"""
-        # Resettiamo i dropdown
+        # Resettiamo i selettori
         placeholder = self.lang.get_text("input.guild.dropdown_placeholder")
-        self.source_dropdown.set(placeholder)
-        self.dest_dropdown.set(placeholder)
+        self.selected_source_display = None
+        self.selected_dest_display = None
+        self.source_select_btn.configure(text=placeholder)
+        self.dest_select_btn.configure(text=placeholder)
         
         # Cancelliamo gli input manuali
         self.source_entry.delete(0, 'end')
@@ -535,8 +753,8 @@ class GuildInput(ctk.CTkFrame):
         if self.source_manual_input:
             return self.source_entry.get()
         else:
-            selected = self.source_dropdown.get()
-            if selected in self.guilds_dict:
+            selected = self.selected_source_display
+            if selected and selected in self.guilds_dict:
                 return str(self.guilds_dict[selected]['id'])
             return ""
     
@@ -545,8 +763,8 @@ class GuildInput(ctk.CTkFrame):
         if self.dest_manual_input:
             return self.dest_entry.get()
         else:
-            selected = self.dest_dropdown.get()
-            if selected in self.guilds_dict:
+            selected = self.selected_dest_display
+            if selected and selected in self.guilds_dict:
                 return str(self.guilds_dict[selected]['id'])
             return ""
 

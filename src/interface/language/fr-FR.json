@@ -24,6 +24,11 @@
                 "np-NP": "Nepali"
             }
         },
+        "features": {
+            "title": "Fonctionnalités",
+            "advanced_explorer": "Mode Avancé",
+            "advanced_mode_description": "Active l'accès direct aux serveurs pour naviguer dans les canaux et voir le contenu complet"
+        },
         "debug": {
             "title": "Débogage",
             "description": "Le mode débogage affiche :\n• Journaux détaillés\n• Temps d'exécution\n• Erreurs spécifiques\n• Statistiques de clonage",
@@ -78,7 +83,14 @@
             "stats_errors": "Erreurs détectées :",
             "stats_time": "Temps écoulé :",
             "error_same_ids": "Les serveurs source et destination ne peuvent pas être identiques",
-            "error_invalid_id": "Les IDs de serveurs doivent être des nombres"
+            "error_invalid_id": "Les IDs de serveurs doivent être des nombres",
+            "advanced_explorer_button": "Explorateur Avancé",
+            "explorer_title": "Explorateur - {name}",
+            "channel_details": "Détails du Canal",
+            "channels_no_category": "Sans catégorie",
+            "view_messages": "Voir les messages",
+            "hide_messages": "Masquer les messages",
+            "select_guild": "Sélectionner le Serveur"
         }
     },
     "status": {
@@ -91,7 +103,41 @@
         "connection_error": "Erreur de connexion : {error}",
         "guilds_loaded": "{count} serveurs chargés",
         "source_selected": "Serveur source sélectionné : {name}",
-        "destination_selected": "Serveur de destination sélectionné : {name}"
+        "destination_selected": "Serveur de destination sélectionné : {name}",
+        "advanced_mode_enabled": "Mode avancé activé",
+        "advanced_mode_disabled": "Mode avancé désactivé",
+        "advanced_mode_auto_opened": "Mode avancé ouvert automatiquement au démarrage"
+    },
+    "advanced_explorer": {
+        "title": "Explorateur Avancé",
+        "server_info": "Informations du Serveur",
+        "channels": "Canaux",
+        "messages": "Messages",
+        "loading": "Chargement...",
+        "no_messages": "Aucun message trouvé",
+        "message_details": "Détails du Message",
+        "attachments": "Pièces Jointes",
+        "embeds": "Intégrations",
+        "reactions": "Réactions",
+        "author": "Auteur",
+        "timestamp": "Horodatage",
+        "content": "Contenu",
+        "voice_message": "Message Vocal",
+        "image": "Image",
+        "video": "Vidéo",
+        "file": "Fichier",
+        "download": "Télécharger",
+        "play": "Lire",
+        "pause": "Pause",
+        "view_full": "Voir Complet",
+        "copy_link": "Copier le Lien",
+        "message_count": "{count} messages",
+        "load_more": "Charger Plus",
+        "search_placeholder": "Rechercher des messages...",
+        "filter_by_user": "Filtrer par utilisateur",
+        "filter_by_date": "Filtrer par date",
+        "export_messages": "Exporter les Messages",
+        "refresh": "Actualiser"
     },
     "debug_window": {
         "title": "Console de débogage",

@@ -3,7 +3,6 @@ from PIL import Image
 import os
 import threading
 import asyncio
-import discord
 import aiohttp
 from src.interface.utils.language_manager import LanguageManager
 from src.interface.styles.colors import Colors
@@ -11,13 +10,14 @@ from src.interface.utils.validators import is_token_valid
 
 class TokenInput(ctk.CTkFrame):
     def __init__(self, master):
-        super().__init__(master, fg_color="transparent")
+        mode = ctk.get_appearance_mode().lower()
+        super().__init__(master, fg_color=Colors.get_color(Colors.BACKGROUND_LIGHT, mode))
         
         # Get the language manager
         self.lang = LanguageManager()
         
-        # Main frame
-        self.main_frame = ctk.CTkFrame(self)
+        # Main frame (use solid color to avoid transparency cost)
+        self.main_frame = ctk.CTkFrame(self, fg_color=Colors.get_color(Colors.BACKGROUND_LIGHT, mode))
         self.main_frame.pack(fill="x", padx=20)
 
         # Label
@@ -29,7 +29,7 @@ class TokenInput(ctk.CTkFrame):
         self.label.pack(anchor="w", pady=(10, 5))
         
         # Input frame
-        self.input_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
+        self.input_frame = ctk.CTkFrame(self.main_frame, fg_color=Colors.get_color(Colors.BACKGROUND_LIGHT, mode))
         self.input_frame.pack(fill="x")
         
         # Entry
