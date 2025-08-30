@@ -11,7 +11,7 @@ import re
 from datetime import datetime
 import base64
 import os
-import customtkinter as ctk
+
 
 def load_or_create_config(file_path="config.json"):
     # Default settings
