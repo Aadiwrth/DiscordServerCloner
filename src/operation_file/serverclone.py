@@ -9,7 +9,36 @@ from concurrent.futures import ThreadPoolExecutor
 import json
 import re
 from datetime import datetime
+import base64
+import os
+import customtkinter as ctk
 
+def load_or_create_config(file_path="config.json"):
+    # Default settings
+    defaults = {
+        "CLONE_UPDATE_NAME_ICON": False
+    }
+
+    # Create file if it doesn't exist
+    if not os.path.exists(file_path):
+        with open(file_path, "w") as f:
+            json.dump(defaults, f, indent=4)
+        print(f"[INFO] {file_path} created with default values.")
+
+    # Load JSON
+    with open(file_path, "r") as f:
+        try:
+            config = json.load(f)
+        except json.JSONDecodeError:
+            print(f"[ERROR] Invalid JSON in {file_path}, using defaults.")
+            config = defaults
+
+    # Ensure all default keys exist
+    for key, value in defaults.items():
+        if key not in config:
+            config[key] = value
+
+    return config
 class Clone:
     def __init__(self, debug_callback=None):
         self.logger = Logger(debug_callback)
@@ -40,6 +69,8 @@ class Clone:
         self.categories_map = {}
         self.channels_map = {}
 
+
+
     def set_progress_callback(self, callback: Callable[[float], None]):
         """Imposta una callback per aggiornare l'UI con il progresso
         La callback riceve un valore da 0.0 a 1.0 che rappresenta la percentuale di completamento
@@ -67,6 +98,7 @@ class Clone:
                 - clone_voice_channels: Whether to clone voice channels
                 - clone_messages: Whether to clone messages
                 - messages_limit: Maximum number of messages to clone per channel
+                - clone_name_icon: clones the name and icon of the destined server
         """
         try:
             self.start_time = time.time()
@@ -96,9 +128,10 @@ class Clone:
                     "clone_text_channels": True,
                     "clone_voice_channels": True,
                     "clone_messages": False,
-                    "messages_limit": 0
+                    "messages_limit": 0,
+                    "clone_name_icon": False
                 }
-            
+         
             # Calculate total operations for progress tracking
             self.total_operations = 0
             self.completed_operations = 0
@@ -107,6 +140,8 @@ class Clone:
             dest_id = guild_to.get("id")
             
             self._safe_log(f"Starting cloning process from {guild_from.get('name')} to {guild_to.get('name')}")
+            # Ensure env is loaded/created
+
             
             # Fetch all data from the source server
             
@@ -199,11 +234,12 @@ class Clone:
             self.progress_steps = dict(progress_steps)
 
             # Cloning sequence with options
+
             # Basic server settings (name, icon)
-            await self._edit_guild_rest(guild_to, guild_from, session)
-            self._update_progress(self.progress_steps.get("edit_guild", 0.05))
             
-            # Roles
+            await self._edit_guild_rest(guild_to, guild_from, session, options=options)
+            self._update_progress(self.progress_steps.get("edit_guild", 0.05))
+
             if options.get("clone_roles", True) and roles_data:
                 await self._delete_existing_roles_rest(guild_to, session)
                 self._update_progress(self.progress_steps.get("delete_roles", 0.15))
@@ -224,20 +260,21 @@ class Clone:
                 await self._delete_existing_channels_rest(guild_to, session)
                 self._update_progress(self.progress_steps.get("delete_channels", 0.40))
             
-            # Categories first
-            if options.get("clone_categories", True) and categories_data:
-                await self._create_categories_rest(guild_to, categories_data, session)
-                self._update_progress(self.progress_steps.get("create_categories", 0.50))
-            
-            # Text & Voice Channels
-            if (options.get("clone_text_channels", True) and text_channels_data) or (options.get("clone_voice_channels", True) and voice_channels_data):
-                await self._create_channels_rest(
-                    guild_to, 
+            # Use the combined create function
+            if (options.get("clone_categories", True) and categories_data) or \
+            (options.get("clone_text_channels", True) and text_channels_data) or \
+            (options.get("clone_voice_channels", True) and voice_channels_data):
+
+                await self._create_categories_and_channels_rest(
+                    guild_to,
+                    categories_data if options.get("clone_categories", True) else [],
                     text_channels_data if options.get("clone_text_channels", True) else [],
                     voice_channels_data if options.get("clone_voice_channels", True) else [],
                     session
                 )
+                # Update progress in one go (or split if you want finer progress tracking)
                 self._update_progress(self.progress_steps.get("create_channels", 0.70))
+
             
             # We skip messages for now as they would need a completely different approach with the REST API
             # You would need to fetch messages from each channel and then post them to the destination
@@ -251,41 +288,121 @@ class Clone:
             self.logger.error(f"Critical error during cloning: {str(e)}")
             return False
 
-    async def _edit_guild_rest(self, guild_to, guild_from, session):
-        """Edit basic server settings using REST API"""
-        self._safe_log("Starting server modification...")
+    async def _edit_guild_rest(self, guild_to, guild_from, session, options=None):
         try:
-            await session.put(f"https://discord.com/api/v10/guilds/{guild_to.get('id')}", json={
-                "name": guild_from.get('name')
-            })
-            
-            # Utilizziamo una sessione separata per il download dell'icona
-            if guild_from.get('icon'):
-                try:
-                    # Creiamo una sessione aiohttp temporanea con force_close=True
-                    async with session.get(guild_from.get('icon')) as response:
-                        if response.status == 200:
-                            icon_data = await response.read()
-                            await session.put(f"https://discord.com/api/v10/guilds/{guild_to.get('id')}/icons/{guild_to.get('icon')}", data=icon_data)
-                            self._safe_log("Server icon updated")
-                except Exception as icon_error:
-                    self.errors += 1
-                    self._safe_log(f"Error downloading server icon: {str(icon_error)}", "ERROR")
+            if options is not None:
+                clone_name_icon = options.get("clone_name_icon", False)
+
+            if not clone_name_icon:
+                self._safe_log("Skipping guild name/icon update (option disabled)")
+                return
+
+            payload = {"name": guild_from.get("name")}
+
+            # Copy the icon if present
+            icon_hash = guild_from.get("icon")
+            if icon_hash:
+                icon_url = f"https://cdn.discordapp.com/icons/{guild_from.get('id')}/{icon_hash}.png"
+                async with session.get(icon_url) as resp:
+                    if resp.status == 200:
+                        icon_bytes = await resp.read()
+                        payload["icon"] = f"data:image/png;base64,{base64.b64encode(icon_bytes).decode()}"
+
+            async with session.patch(f"https://discord.com/api/v10/guilds/{guild_to.get('id')}", json=payload) as resp:
+                if resp.status in [200, 201]:
+                    self._safe_log("Guild name/icon updated successfully")
+                else:
+                    self._safe_log(f"Failed updating guild: {resp.status}", "ERROR")
+
         except Exception as e:
-            self.errors += 1
-            self._safe_log(f"Error modifying server: {str(e)}", "ERROR")
+            self._safe_log(f"Error updating guild: {str(e)}", "ERROR")
 
     async def _delete_existing_roles_rest(self, guild_to, session):
-        """Delete all existing roles using REST API"""
+        """Delete all existing roles except @everyone using REST API"""
         self._safe_log("Deleting existing roles...")
-        roles_url = f"https://discord.com/api/v10/guilds/{guild_to.get('id')}/roles"
-        await session.delete(roles_url)
+        try:
+            roles_url = f"https://discord.com/api/v10/guilds/{guild_to.get('id')}/roles"
+            async with session.get(roles_url) as resp:
+                if resp.status == 200:
+                    roles_data = await resp.json()
+                    for role in roles_data:
+                        if role.get("name") == "@everyone":
+                            continue
+                        try:
+                            async with session.delete(f"{roles_url}/{role.get('id')}") as del_resp:
+                                if del_resp.status in (200, 204):
+                                    self._safe_log(f"Deleted role: {role.get('name')}")
+                                elif del_resp.status == 429:
+                                    rate_limit_data = await del_resp.json()
+                                    retry_after = rate_limit_data.get("retry_after", 5)
+                                    self._safe_log(f"Rate limit hit deleting role {role.get('name')}, waiting {retry_after}s", "ERROR")
+                                    await asyncio.sleep(retry_after)
+                                    continue
+                                else:
+                                    self.errors += 1
+                                    self._safe_log(f"Error deleting role {role.get('name')}: {del_resp.status}", "ERROR")
+                            await asyncio.sleep(1.0)
+                        except Exception as e:
+                            self.errors += 1
+                            self._safe_log(f"Exception deleting role {role.get('name')}: {str(e)}", "ERROR")
+                            await asyncio.sleep(2.0)
+                else:
+                    self.errors += 1
+                    self._safe_log(f"Failed to fetch roles for deletion: {resp.status}", "ERROR")
+        except Exception as e:
+            self.errors += 1
+            self._safe_log(f"Critical error deleting roles: {str(e)}", "ERROR")
+
 
     async def _delete_existing_channels_rest(self, guild_to, session):
-        """Delete all existing channels using REST API"""
+        """Delete all existing channels using REST API (properly by ID)"""
         self._safe_log("Deleting existing channels...")
-        channels_url = f"https://discord.com/api/v10/guilds/{guild_to.get('id')}/channels"
-        await session.delete(channels_url)
+
+        try:
+            # Fetch all channels from the target guild
+            async with session.get(f"https://discord.com/api/v10/guilds/{guild_to.get('id')}/channels") as resp:
+                if resp.status != 200:
+                    self.errors += 1
+                    self._safe_log(f"Failed to fetch channels for deletion: {resp.status}", "ERROR")
+                    return
+                
+                channels = await resp.json()
+
+            # Sort categories first, then other channels
+            # This ensures that text/voice channels under categories get deleted properly
+            categories = [c for c in channels if c.get("type") == 4]
+            other_channels = [c for c in channels if c.get("type") != 4]
+
+            all_channels_sorted = other_channels + categories  # Delete child channels first, then categories
+
+            for channel in all_channels_sorted:
+                channel_id = channel.get("id")
+                channel_name = channel.get("name", "Unknown")
+
+                try:
+                    async with session.delete(f"https://discord.com/api/v10/channels/{channel_id}") as del_resp:
+                        if del_resp.status in (200, 204):
+                            self._safe_log(f"Deleted channel: {channel_name}")
+                        elif del_resp.status == 429:  # Rate limit
+                            rate_limit_data = await del_resp.json()
+                            retry_after = rate_limit_data.get("retry_after", 5)
+                            self._safe_log(f"Rate limit hit deleting channel {channel_name}, waiting {retry_after}s", "ERROR")
+                            await asyncio.sleep(retry_after)
+                            # Retry deletion
+                            continue
+                        else:
+                            self.errors += 1
+                            self._safe_log(f"Error deleting channel {channel_name}: {del_resp.status}", "ERROR")
+                except Exception as e:
+                    self.errors += 1
+                    self._safe_log(f"Exception deleting channel {channel_name}: {str(e)}", "ERROR")
+                
+                # Small delay to avoid hitting rate limits
+                await asyncio.sleep(1.0)
+        
+        except Exception as e:
+            self.errors += 1
+            self._safe_log(f"Critical error deleting channels: {str(e)}", "ERROR")
 
     def _safe_log(self, message: str, level: str = "INFO"):
         """Thread-safe logging wrapper"""
@@ -334,135 +451,174 @@ class Clone:
                 self._safe_log(f"Error creating role {role.get('name')}: {str(e)}", "ERROR")
                 # In caso di errore, aspettiamo un po' di più
                 await asyncio.sleep(1.0)
-
-    async def _create_categories_rest(self, guild_to, categories_data, session):
-        """Create categories using REST API"""
+                
+    async def _create_categories_and_channels_rest(self, guild_to, categories_data, text_channels_data, voice_channels_data, session):
+        """Create categories and channels preserving their layout and parent relationships"""
+        
+        # ---------------- CREATE CATEGORIES ----------------
+        self._safe_log("Creating categories...")
+        categories_data = sorted(categories_data, key=lambda c: c.get("position", 0))
+        
         for category in categories_data:
             try:
-                overwrites_to = {}
-                for key, value in category.get('overwrites', {}).items():
-                    role = discord.utils.get(guild_to.get('roles'), name=key.get('name'))
-                    if role:
-                        overwrites_to[role] = value
-                
-                async with session.put(f"https://discord.com/api/v10/guilds/{guild_to.get('id')}/channels/{category.get('id')}", json={
-                    "name": category.get('name'),
-                    "overwrites": overwrites_to
-                }) as response:
-                    if response.status == 200 or response.status == 201:
-                        self.channel_map[category.get('id')] = category.get('id')
+                overwrites_to = []
+                for role_id, perms in category.get("overwrites", {}).items():
+                    overwrites_to.append({
+                        "id": str(role_id),
+                        "type": 0,  # role overwrite
+                        "allow": perms.get("allow", "0"),
+                        "deny": perms.get("deny", "0")
+                    })
+
+                payload = {
+                    "name": category.get("name"),
+                    "type": 4,  # 4 = category
+                    "permission_overwrites": overwrites_to,
+                    "position": category.get("position", 0)
+                }
+
+                async with session.post(
+                    f"https://discord.com/api/v10/guilds/{guild_to.get('id')}/channels",
+                    json=payload
+                ) as response:
+                    if response.status in (200, 201):
+                        created = await response.json()
+                        self.categories_map[category.get("id")] = created.get("id")
                         self._safe_log(f"Category created: {category.get('name')}")
-                    elif response.status == 429:  # Rate limit
-                        # Estraiamo le informazioni sul rate limit
+                    elif response.status == 429:
                         rate_limit_data = await response.json()
-                        retry_after = rate_limit_data.get('retry_after', 5)  # Default 5 secondi
-                        self._safe_log(f"Rate limit hit when creating category {category.get('name')}. Waiting {retry_after} seconds...", "ERROR")
+                        retry_after = rate_limit_data.get("retry_after", 5)
+                        self._safe_log(f"Rate limit hit creating category {category.get('name')}, waiting {retry_after}s", "ERROR")
                         await asyncio.sleep(retry_after)
-                        # Riprova la creazione della categoria
                         continue
                     else:
                         self.errors += 1
                         self._safe_log(f"Error creating category {category.get('name')}: {response.status}", "ERROR")
-                
-                # Aggiungi un ritardo più lungo per evitare i rate limit
-                await asyncio.sleep(2.0) 
+
+                await asyncio.sleep(1.5)
+
             except Exception as e:
                 self.errors += 1
-                self._safe_log(f"Error creating category {category.get('name')}: {str(e)}", "ERROR")
-                # Aumentiamo il ritardo in caso di errore
-                await asyncio.sleep(4.0)
+                self._safe_log(f"Exception creating category {category.get('name')}: {str(e)}", "ERROR")
+                await asyncio.sleep(3.0)
 
-    async def _create_channels_rest(self, guild_to, text_channels_data, voice_channels_data, session):
-        """Create channels using REST API"""
-        # Create text channels
+        # ---------------- CREATE TEXT CHANNELS ----------------
+        self._safe_log("Creating text channels...")
+        text_channels_data = sorted(text_channels_data, key=lambda c: c.get("position", 0))
+        
         for channel in text_channels_data:
             try:
-                category = None
-                if channel.get('category_id') and channel.get('category_id') in self.channel_map:
-                    category = guild_to.get('channels', []).get(str(self.channel_map[channel.get('category_id')]), {}).get('name')
+                payload = {
+                    "name": channel.get("name"),
+                    "type": 0,  # text
+                    "topic": channel.get("topic"),
+                    "position": channel.get("position", 0),
+                    "nsfw": channel.get("nsfw", False),
+                    "rate_limit_per_user": channel.get("slowmode_delay", 0)
+                }
 
-                overwrites_to = {}
-                for key, value in channel.get('overwrites', {}).items():
-                    role = discord.utils.get(guild_to.get('roles', []), name=key.get('name'))
-                    if role:
-                        overwrites_to[role] = value
+                # Map parent category
+                old_cat_id = channel.get("category_id") or channel.get("parent_id")
+                if old_cat_id and old_cat_id in self.categories_map:
+                    payload["parent_id"] = str(self.categories_map[old_cat_id])
 
-                async with session.put(f"https://discord.com/api/v10/guilds/{guild_to.get('id')}/channels/{channel.get('id')}", json={
-                    "name": channel.get('name'),
-                    "overwrites": overwrites_to,
-                    "position": channel.get('position'),
-                    "topic": channel.get('topic'),
-                    "slowmode_delay": channel.get('slowmode_delay'),
-                    "nsfw": channel.get('nsfw'),
-                    "category_id": category
-                }) as response:
-                    if response.status == 200 or response.status == 201:
-                        self.channels_created += 1
-                        self._safe_log(f"Text channel created ({self.channels_created}/{self.total_channels}): {channel.get('name')}")
-                    elif response.status == 429:  # Rate limit
-                        # Estraiamo le informazioni sul rate limit
-                        rate_limit_data = await response.json()
-                        retry_after = rate_limit_data.get('retry_after', 5)  # Default 5 secondi
-                        self._safe_log(f"Rate limit hit when creating channel {channel.get('name')}. Waiting {retry_after} seconds...", "ERROR")
+                # Permission overwrites
+                overwrites_to = []
+                for role_id, perms in channel.get("overwrites", {}).items():
+                    overwrites_to.append({
+                        "id": str(role_id),
+                        "type": 0,
+                        "allow": perms.get("allow", "0"),
+                        "deny": perms.get("deny", "0")
+                    })
+                if overwrites_to:
+                    payload["permission_overwrites"] = overwrites_to
+
+                self._safe_log(f"Creating text channel {channel.get('name')} under category {payload.get('parent_id')}")
+                
+                async with session.post(
+                    f"https://discord.com/api/v10/guilds/{guild_to.get('id')}/channels",
+                    json=payload
+                ) as resp:
+                    if resp.status in (200, 201):
+                        created = await resp.json()
+                        self.channels_map[channel.get("id")] = created.get("id")
+                        self._safe_log(f"Text channel created: {channel.get('name')}")
+                    elif resp.status == 429:
+                        rate_limit_data = await resp.json()
+                        retry_after = rate_limit_data.get("retry_after", 5)
+                        self._safe_log(f"Rate limit hit creating text channel {channel.get('name')}, waiting {retry_after}s", "ERROR")
                         await asyncio.sleep(retry_after)
-                        # Riprova la creazione del canale
                         continue
                     else:
                         self.errors += 1
-                        self._safe_log(f"Error creating text channel {channel.get('name')}: {response.status}", "ERROR")
-                
-                # Aggiungi un ritardo più lungo per evitare i rate limit
-                await asyncio.sleep(2.5)
+                        self._safe_log(f"Error creating text channel {channel.get('name')}: {resp.status}", "ERROR")
+
+                await asyncio.sleep(1.5)
+
             except Exception as e:
                 self.errors += 1
-                self._safe_log(f"Error creating text channel {channel.get('name')}: {str(e)}", "ERROR")
-                # Aumentiamo il ritardo in caso di errore
-                await asyncio.sleep(5.0)
+                self._safe_log(f"Exception creating text channel {channel.get('name')}: {str(e)}", "ERROR")
+                await asyncio.sleep(3.0)
 
-        # Create voice channels
+        # ---------------- CREATE VOICE CHANNELS ----------------
+        self._safe_log("Creating voice channels...")
+        voice_channels_data = sorted(voice_channels_data, key=lambda c: c.get("position", 0))
+        
         for channel in voice_channels_data:
             try:
-                category = None
-                if channel.get('category_id') and channel.get('category_id') in self.channel_map:
-                    category = guild_to.get('channels', []).get(str(self.channel_map[channel.get('category_id')]), {}).get('name')
+                payload = {
+                    "name": channel.get("name"),
+                    "type": 2,  # voice
+                    "position": channel.get("position", 0),
+                    "bitrate": channel.get("bitrate", 64000),
+                    "user_limit": channel.get("user_limit", 0)
+                }
 
-                overwrites_to = {}
-                for key, value in channel.get('overwrites', {}).items():
-                    role = discord.utils.get(guild_to.get('roles', []), name=key.get('name'))
-                    if role:
-                        overwrites_to[role] = value
+                old_cat_id = channel.get("category_id") or channel.get("parent_id")
+                if old_cat_id and old_cat_id in self.categories_map:
+                    payload["parent_id"] = str(self.categories_map[old_cat_id])
 
-                async with session.put(f"https://discord.com/api/v10/guilds/{guild_to.get('id')}/channels/{channel.get('id')}", json={
-                    "name": channel.get('name'),
-                    "overwrites": overwrites_to,
-                    "position": channel.get('position'),
-                    "user_limit": channel.get('user_limit'),
-                    "bitrate": channel.get('bitrate'),
-                    "category_id": category
-                }) as response:
-                    if response.status == 200 or response.status == 201:
-                        self.channels_created += 1
-                        self._safe_log(f"Voice channel created ({self.channels_created}/{self.total_channels}): {channel.get('name')}")
-                    elif response.status == 429:  # Rate limit
-                        # Estraiamo le informazioni sul rate limit
-                        rate_limit_data = await response.json()
-                        retry_after = rate_limit_data.get('retry_after', 5)  # Default 5 secondi
-                        self._safe_log(f"Rate limit hit when creating channel {channel.get('name')}. Waiting {retry_after} seconds...", "ERROR")
+                overwrites_to = []
+                for role_id, perms in channel.get("overwrites", {}).items():
+                    overwrites_to.append({
+                        "id": str(role_id),
+                        "type": 0,
+                        "allow": perms.get("allow", "0"),
+                        "deny": perms.get("deny", "0")
+                    })
+                if overwrites_to:
+                    payload["permission_overwrites"] = overwrites_to
+
+                self._safe_log(f"Creating voice channel {channel.get('name')} under category {payload.get('parent_id')}")
+                
+                async with session.post(
+                    f"https://discord.com/api/v10/guilds/{guild_to.get('id')}/channels",
+                    json=payload
+                ) as resp:
+                    if resp.status in (200, 201):
+                        created = await resp.json()
+                        self.channels_map[channel.get("id")] = created.get("id")
+                        self._safe_log(f"Voice channel created: {channel.get('name')}")
+                    elif resp.status == 429:
+                        rate_limit_data = await resp.json()
+                        retry_after = rate_limit_data.get("retry_after", 5)
+                        self._safe_log(f"Rate limit hit creating voice channel {channel.get('name')}, waiting {retry_after}s", "ERROR")
                         await asyncio.sleep(retry_after)
-                        # Riprova la creazione del canale
                         continue
                     else:
                         self.errors += 1
-                        self._safe_log(f"Error creating voice channel {channel.get('name')}: {response.status}", "ERROR")
-                
-                # Aggiungi un ritardo più lungo per evitare i rate limit
-                await asyncio.sleep(2.5)
+                        self._safe_log(f"Error creating voice channel {channel.get('name')}: {resp.status}", "ERROR")
+
+                await asyncio.sleep(1.5)
+
             except Exception as e:
                 self.errors += 1
-                self._safe_log(f"Error creating voice channel {channel.get('name')}: {str(e)}", "ERROR")
-                # Aumentiamo il ritardo in caso di errore
-                await asyncio.sleep(5.0)
+                self._safe_log(f"Exception creating voice channel {channel.get('name')}: {str(e)}", "ERROR")
+                await asyncio.sleep(3.0)
 
+
+           
     async def _copy_messages(self, guild_from: discord.Guild, guild_to: discord.Guild, message_limit=100):
         """Copy messages from source server channels with a limit"""
         self._safe_log("Starting message copy...")
