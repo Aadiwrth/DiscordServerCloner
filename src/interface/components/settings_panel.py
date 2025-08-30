@@ -375,7 +375,7 @@ class SettingsPanel(ctk.CTkFrame):
                 lang.get_text("settings.language.languages.en-US"),
                 lang.get_text("settings.language.languages.es-ES"),
                 lang.get_text("settings.language.languages.fr-FR"),
-                lang.get_text("settings.language.languages.np-NP"),
+                lang.get_text("settings.language.languages.np-NP")
                 
             ])
         
