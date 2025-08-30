@@ -101,9 +101,9 @@ To create a standalone executable:
 
 ## GUI
 
-![Main interface](https://github.com/user-attachments/assets/9a417fd9-cb31-4a1f-8ff1-be0a5dd6b352)
-![Settings panel](https://github.com/user-attachments/assets/b6dd3177-e82f-4279-8d7a-7ba1d8e18cea)
-
+![Main interface](https://github.com/user-attachments/assets/82ab4bda-9501-4dd5-824b-133571bb2be0)
+![Settings panel](https://github.com/user-attachments/assets/3f3ab413-d641-4d9b-a9c4-78696a229752)
+![Server Searchbar](https://github.com/user-attachments/assets/dafe5bb0-a599-44af-9e27-87fd2178ef4e)
 ---
 
 ## Contributing
