@@ -20,7 +20,8 @@
                 "it-IT": "Italiano",
                 "en-US": "English",
                 "es-ES": "Español",
-                "fr-FR": "Français"
+                "fr-FR": "Français",
+                "np-NP": "Nepali"
             }
         },
         "debug": {
@@ -63,6 +64,7 @@
             "reset_button": "Effacer",
             "options_title": "Options de clonage",
             "option_roles": "Cloner les rôles",
+            "option_michelleneous": "Nom et icône du clone", 
             "option_categories": "Cloner les catégories",
             "option_text_channels": "Cloner les salons textuels",
             "option_voice_channels": "Cloner les salons vocaux",

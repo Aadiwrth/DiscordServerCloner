@@ -20,7 +20,8 @@
                 "it-IT": "Italiano",
                 "en-US": "English",
                 "es-ES": "Español",
-                "fr-FR": "Français"
+                "fr-FR": "Français",
+                "np-NP": "Nepali"
             }
         },
         "debug": {
@@ -63,6 +64,7 @@
             "reset_button": "Clear",
             "options_title": "Cloning Options",
             "option_roles": "Clone roles",
+            "option_michelleneous": "Clone Name and icon",
             "option_categories": "Clone categories",
             "option_text_channels": "Clone text channels",
             "option_voice_channels": "Clone voice channels",

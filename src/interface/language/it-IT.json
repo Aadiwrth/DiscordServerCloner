@@ -20,7 +20,8 @@
                 "it-IT": "Italiano",
                 "en-US": "English",
                 "es-ES": "Español",
-                "fr-FR": "Français"
+                "fr-FR": "Français",
+                "np-NP": "Nepali"
             }
         },
         "debug": {
@@ -63,6 +64,7 @@
             "reset_button": "Cancella",
             "options_title": "Opzioni di Clonazione",
             "option_roles": "Clona ruoli",
+            "option_michelleneous": "Clona nome e icona",
             "option_categories": "Clona categorie",
             "option_text_channels": "Clona canali testuali",
             "option_voice_channels": "Clona canali vocali",

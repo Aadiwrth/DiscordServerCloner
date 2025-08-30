@@ -7,5 +7,3 @@ colorama>=0.4.6
 asyncio>=3.4.3
 typing>=3.7.4.3
 PyInstaller>=6.0.0
-webbrowser
-json 

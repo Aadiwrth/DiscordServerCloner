@@ -190,7 +190,18 @@ class GuildInput(ctk.CTkFrame):
         self.checkboxes_frame.pack(fill="x", padx=20, pady=5)
         self.checkboxes_frame.grid_columnconfigure(0, weight=1)
         self.checkboxes_frame.grid_columnconfigure(1, weight=1)
-        
+
+        # Opzione Clone Name e Icon
+        self.clone_name_icon_var = ctk.BooleanVar(value=True)
+        self.clone_name_icon_checkbox = ctk.CTkCheckBox(
+            self.checkboxes_frame,
+            text=self.lang.get_text("input.guild.option_michelleneous"),  # add this key in your language files
+            variable=self.clone_name_icon_var,
+            onvalue=True,
+            offvalue=False
+        )
+        self.clone_name_icon_checkbox.grid(row=3, column=0, sticky="w", pady=5)
+
         # Opzione ruoli
         self.clone_roles_var = ctk.BooleanVar(value=True)
         self.clone_roles_checkbox = ctk.CTkCheckBox(
@@ -692,7 +703,9 @@ class GuildInput(ctk.CTkFrame):
                             "clone_text_channels": self.clone_text_channels_var.get(),
                             "clone_voice_channels": self.clone_voice_channels_var.get(),
                             "clone_messages": self.clone_messages_var.get(),
-                            "messages_limit": int(self.messages_limit_var.get()) if self.clone_messages_var.get() else 0
+                            "clone_name_icon": self.clone_name_icon_var.get(),
+                            "messages_limit": int(self.messages_limit_var.get()) if self.clone_messages_var.get()
+                            else 0
                         }
                     )
                     
