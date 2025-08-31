@@ -57,7 +57,8 @@ def open_advanced_explorer(parent: ctk.CTkBaseClass,
         title_text = f"Discord - {gname}"
     top.title(title_text)
     top.geometry("1200x700")
-    top.grab_set()
+    top.after(10, top.grab_set)   # wait a few ms until window is mapped
+
     top.configure(fg_color=DiscordColors.get_background_color(mode, "primary"))
     
     # Set minimum size to maintain Discord-like proportions

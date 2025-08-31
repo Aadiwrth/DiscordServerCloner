@@ -547,7 +547,8 @@ class GuildInput(ctk.CTkFrame):
         top = ctk.CTkToplevel(self)
         top.title(self.lang.get_text("input.guild.search_title") if hasattr(self.lang, 'get_text') else "Seleziona Server")
         top.geometry("560x560")
-        top.grab_set()
+        top.after(10, top.grab_set)   # wait a few ms until window is mapped
+
         
         mode = ctk.get_appearance_mode().lower()
         top.configure(fg_color=Colors.get_color(Colors.SETTINGS_BG, mode))

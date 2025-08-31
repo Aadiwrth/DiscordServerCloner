@@ -113,13 +113,16 @@ class TokenInput(ctk.CTkFrame):
         self.entry.configure(placeholder_text=self.lang.get_text("input.token.placeholder"))
         self.help_label.configure(text=self.lang.get_text("input.token.help"))
         self.verify_button.configure(text=self.lang.get_text("input.token.verify_button"))
-        
+   # Force placeholder refresh if entry is empty
+        if self.entry.get() == "":
+            self.entry.focus()                  
+            self.entry.master.focus_set()       
+
         # If the tooltip is visible, update it
         if self.tooltip:
             for child in self.tooltip.winfo_children():
                 if isinstance(child, ctk.CTkLabel):
-                    child.configure(text=self.lang.get_text("input.token.help_text"))
-        
+                    child.configure(text=self.lang.get_text("input.token.help_text"))      
     def schedule_tooltip(self, event):
         """Schedule the appearance of the tooltip after a delay"""
         if self.tooltip_timer:
