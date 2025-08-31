@@ -6,7 +6,7 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=[('src/interface/assets', 'src/interface/assets'), ('src/interface/language', 'src/interface/language')],
-    hiddenimports=[],
+    hiddenimports=['PIL._tkinter_finder'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -35,5 +35,5 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['src\\interface\\assets\\discord_logo.png'],
+    icon=['src/interface/assets/discord_logo.png'],
 )

@@ -311,7 +311,7 @@ class MainWindow(ctk.CTk):
         self.after(300, self._check_updates_start)
         
         # Auto-open advanced explorer if enabled
-        self.after(500, self._auto_open_advanced_explorer)
+        # self.after(500, self._auto_open_advanced_explorer)
         
         # Placeholder for embedded advanced explorer frame
         self.embedded_explorer = None
