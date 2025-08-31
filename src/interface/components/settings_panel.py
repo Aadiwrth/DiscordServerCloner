@@ -539,7 +539,9 @@ class SettingsPanel(ctk.CTkFrame):
         top = ctk.CTkToplevel(self)
         top.title("Contributors")
         top.geometry("520x600")
-        top.grab_set()
+        # top.grab_set() <--- doesn't work for linux
+        top.after(10, top.grab_set)   # wait a few ms until window is mapped
+
         mode = ctk.get_appearance_mode().lower()
         top.configure(fg_color=Colors.get_color(Colors.SETTINGS_BG, mode))
 

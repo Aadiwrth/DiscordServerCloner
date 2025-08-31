@@ -325,7 +325,9 @@ class MainWindow(ctk.CTk):
         about_window.title(self.lang.get_text("settings.info.title"))
         about_window.geometry("400x300")
         about_window.resizable(False, False)
-        about_window.grab_set()  # Modal dialog
+        # about_window.grab_set()  # Modal dialog
+        about_window.after(10, about_window.grab_set)   # wait a few ms until window is mapped
+
         
         # Try to set icon
         try:
