@@ -36,10 +36,14 @@ class GuildInput(ctk.CTkFrame):
         adv_flag = self.settings.get_setting("features", "advanced_explorer")
         self._advanced_explorer_enabled = True if adv_flag is None else bool(adv_flag)
         
-        # Main frame
-        self.main_frame = ctk.CTkFrame(self)
-        self.main_frame.pack(fill="x", padx=20)
-        
+                # Main frame
+        self.main_frame = ctk.CTkScrollableFrame(
+            self, 
+            fg_color="transparent",
+            height=430
+        )
+        self.main_frame.pack(fill="both", expand=True, padx=20, pady=(1, 0))  
+
         # Source Guild Frame
         self.source_label = ctk.CTkLabel(
             self.main_frame,
